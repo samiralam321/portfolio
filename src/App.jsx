@@ -40,9 +40,10 @@ const Twitter = ({ className = "size-4" }) => (
 )
 
 // Reusable BlurFade animation component mimicking Magic UI
-const BlurFade = ({ children, delay = 0, duration = 0.4 }) => {
+const BlurFade = ({ children, delay = 0, duration = 0.4, className = "" }) => {
   return (
     <motion.div
+      className={className}
       initial={{ opacity: 0, filter: 'blur(6px)', y: 8 }}
       animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
       transition={{
@@ -295,7 +296,7 @@ function App() {
       title: "CP Master",
       period: "2025",
       description: "Designed and developed a modern, interactive roadmap platform for Competitive Programming.",
-      tech: ["React.js", "Tailwind CSS", "Competitive Programming", "Algorithms"],
+      tech: ["React.js", "Tailwind CSS", "Competitive Programming"],
       image: "/images/cpmaster_mockup.png",
       links: [
         { name: "Website", url: "https://cpmaster.netlify.app/", icon: <Globe className="size-3" /> },
@@ -544,7 +545,7 @@ function App() {
                   >
                     {projects.map((project, idx) => (
                       <div key={idx} className="w-[280px] sm:w-[325px] flex-shrink-0 snap-start flex flex-col">
-                        <BlurFade delay={0.6 + idx * 0.05}>
+                        <BlurFade delay={0.6 + idx * 0.05} className="h-full flex flex-col">
                           <div className="rounded-xl bg-card text-card-foreground flex flex-col overflow-hidden border border-border hover:shadow-lg transition-all duration-300 ease-out h-full group">
                             <div className="block overflow-hidden relative h-40 bg-white">
                               <img 
