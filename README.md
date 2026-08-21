@@ -2,7 +2,7 @@
 
 A sleek, minimal, and responsive single-page personal portfolio built with **React 19**, **Vite**, **Tailwind CSS v4**, and **Framer Motion**. Features a macOS-inspired interactive spring dock and horizontal project carousel.
 
-🌐 **Live Demo:** [samirin.vercel.app](https://samirin.vercel.app/)
+🌐 **Live Demo:** [samirin.vercel.app](https://samirintech.vercel.app/)
 
 ---
 
