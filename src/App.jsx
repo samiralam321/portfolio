@@ -311,7 +311,7 @@ function App() {
       image: "/images/tempotimer_mockup.jpg",
       links: [
         { name: "Website", url: "https://tempo-timer-five.vercel.app/", icon: <Globe className="size-3" /> },
-        { name: "GitHub", url: "https://github.com/samiralam321", icon: <Github className="size-3 text-white" /> }
+        { name: "GitHub", url: "https://github.com/samiralam321/tempo-timer", icon: <Github className="size-3 text-white" /> }
       ]
     }
   ]
