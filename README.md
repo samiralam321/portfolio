@@ -58,7 +58,7 @@ Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 
 ## 📬 Contact & Links
 
-- **Website:** [samirin.vercel.app](https://samirin.vercel.app/)
+- **Website:** [samirin.vercel.app](https://samirintech.vercel.app/)
 - **LinkedIn:** [samir-alam](https://www.linkedin.com/in/samir-alam-595b74328/)
 - **X (Twitter):** [@CodeLvM](https://x.com/CodeLvM)
 - **GitHub:** [@samiralam321](https://github.com/samiralam321)
