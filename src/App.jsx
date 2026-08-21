@@ -228,6 +228,11 @@ function App() {
       url: "https://www.linkedin.com/in/samir-alam-595b74328/"
     },
     {
+      name: "X (Twitter)",
+      icon: <Twitter className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      url: "https://x.com/CodeLvM"
+    },
+    {
       name: "Resume",
       icon: <FileText className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
       url: "/resume.pdf"
@@ -791,6 +796,10 @@ function App() {
 
           <DockIcon href="https://www.linkedin.com/in/samir-alam-595b74328/" target="_blank" rel="noopener noreferrer" title="LinkedIn">
             <Linkedin className="size-[19px]" />
+          </DockIcon>
+          
+          <DockIcon href="https://x.com/CodeLvM" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
+            <Twitter className="size-[19px]" />
           </DockIcon>
           
           <DockIcon onClick={() => handleNav('contact')} title="Contact">
