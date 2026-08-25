@@ -230,7 +230,7 @@ function App() {
     {
       name: "X (Twitter)",
       icon: <Twitter className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
-      url: "https://x.com/CodeLvM"
+      url: "https://x.com/SamAlCse"
     },
     {
       name: "Resume",
@@ -798,7 +798,7 @@ function App() {
             <Linkedin className="size-[19px]" />
           </DockIcon>
           
-          <DockIcon href="https://x.com/CodeLvM" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
+          <DockIcon href="https://x.com/SamAlCse" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
             <Twitter className="size-[19px]" />
           </DockIcon>
           

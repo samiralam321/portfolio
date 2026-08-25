@@ -60,6 +60,6 @@ Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 
 - **Website:** [samirin.vercel.app](https://samirintech.vercel.app/)
 - **LinkedIn:** [samir-alam](https://www.linkedin.com/in/samir-alam-595b74328/)
-- **X (Twitter):** [@CodeLvM](https://x.com/CodeLvM)
+- **X (Twitter):** [@SamAlCse](https://x.com/SamAlCse)
 - **GitHub:** [@samiralam321](https://github.com/samiralam321)
 
