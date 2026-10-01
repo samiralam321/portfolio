@@ -16,7 +16,8 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  Play
+  Play,
+  Pause
 } from 'lucide-react'
 
 // Custom inline SVG icons for Github, Linkedin, Twitter, and Spotify
@@ -146,6 +147,27 @@ function App() {
   const [view, setView] = useState('home') // 'home' or 'contact'
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState(null) // null, 'sending', 'success'
+
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const audioRef = React.useRef(null)
+
+  const togglePlayAudio = () => {
+    if (!audioRef.current) return
+    if (isPlayingAudio) {
+      audioRef.current.pause()
+      setIsPlayingAudio(false)
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlayingAudio(true)
+      }).catch(err => {
+        console.error("Audio playback error:", err)
+      })
+    }
+  }
+
+  const handleAudioEnded = () => {
+    setIsPlayingAudio(false)
+  }
 
   const projectsContainerRef = React.useRef(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -423,6 +445,55 @@ function App() {
                   </div>
                 </BlurFade>
               </div>
+            </section>
+
+            {/* Music / Audio Player Widget Section */}
+            <section id="music">
+              <BlurFade delay={0.22}>
+                <audio 
+                  ref={audioRef} 
+                  src="https://res.cloudinary.com/dxarkutme/video/upload/v1790876397/The_Sways_-_Blue_Sky_Don_t_Cry_Official_Video_opabdg.m4a" 
+                  onEnded={handleAudioEnded}
+                  preload="metadata"
+                />
+                <div className="rounded-2xl border border-border/80 bg-card p-3.5 px-4 shadow-sm hover:shadow-md transition-all duration-300 max-w-2xl mx-auto flex items-center justify-between group">
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative size-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm bg-white">
+                      <img 
+                        src="/images/blueskydontcry_cover.jpg" 
+                        alt="Blue Sky, Don't Cry Album Cover" 
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <Spotify className="size-3.5 text-[#1DB954]" />
+                        <span>{isPlayingAudio ? 'Now playing' : 'Last played'}</span>
+                      </div>
+                      <h3 className="font-bold text-sm text-foreground tracking-tight leading-tight">
+                        Blue Sky, Don't Cry
+                      </h3>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        The Sways
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={togglePlayAudio}
+                    type="button"
+                    className="size-9 rounded-full bg-background border border-border/70 shadow-sm flex items-center justify-center hover:bg-muted hover:scale-105 active:scale-95 transition-all text-foreground group-hover:border-foreground/30 flex-shrink-0 cursor-pointer"
+                    title={isPlayingAudio ? "Pause" : "Play"}
+                  >
+                    {isPlayingAudio ? (
+                      <Pause className="size-4 fill-current ml-0" />
+                    ) : (
+                      <Play className="size-4 fill-current ml-0.5" />
+                    )}
+                  </button>
+                </div>
+              </BlurFade>
             </section>
 
             {/* Coding Profiles Section */}
@@ -710,45 +781,7 @@ function App() {
               </div>
             </section>
 
-            {/* Music / Currently Listening Widget Section */}
-            <section id="music" className="scroll-mt-12 pt-2">
-              <BlurFade delay={0.88}>
-                <div className="rounded-2xl border border-border/80 bg-card p-3.5 px-4 shadow-sm hover:shadow-md transition-all duration-300 max-w-2xl mx-auto flex items-center justify-between group">
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative size-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm bg-white">
-                      <img 
-                        src="/images/blueskydontcry_cover.jpg" 
-                        alt="Blue Sky, Don't Cry Album Cover" 
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                    
-                    <div className="flex flex-col space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                        <Spotify className="size-3.5 text-[#1DB954]" />
-                        <span>Last played</span>
-                      </div>
-                      <h3 className="font-bold text-sm text-foreground tracking-tight leading-tight">
-                        Blue Sky, Don't Cry
-                      </h3>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Dhruv
-                      </p>
-                    </div>
-                  </div>
 
-                  <a
-                    href="https://youtu.be/MFDS9bVWuDc?si=17A2F0ihfb3Xju1g"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="size-9 rounded-full bg-background border border-border/70 shadow-sm flex items-center justify-center hover:bg-muted hover:scale-105 active:scale-95 transition-all text-foreground group-hover:border-foreground/30 flex-shrink-0"
-                    title="Listen on YouTube"
-                  >
-                    <Play className="size-4 fill-current ml-0.5" />
-                  </a>
-                </div>
-              </BlurFade>
-            </section>
 
             {/* Contact Section */}
             <section id="contact">
