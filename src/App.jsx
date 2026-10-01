@@ -15,10 +15,11 @@ import {
   BookOpen,
   FileText,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Play
 } from 'lucide-react'
 
-// Custom inline SVG icons for Github, Linkedin, and Twitter
+// Custom inline SVG icons for Github, Linkedin, Twitter, and Spotify
 const Github = ({ className = "size-4" }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
@@ -37,6 +38,12 @@ const Linkedin = ({ className = "size-4" }) => (
 const Twitter = ({ className = "size-4" }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+)
+
+const Spotify = ({ className = "size-4 text-[#1DB954]" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm5.521 17.341c-.218.358-.684.471-1.042.253-2.863-1.748-6.463-2.143-10.706-1.171-.407.094-.817-.161-.911-.567-.094-.407.161-.817.567-.911 4.647-1.064 8.625-.612 11.84 1.353.358.218.471.684.252 1.043zm1.472-3.273c-.274.446-.86.587-1.306.313-3.275-2.012-8.269-2.597-12.144-1.421-.5.152-1.026-.134-1.178-.634-.152-.5.134-1.026.634-1.178 4.426-1.343 9.924-.694 13.681 1.614.446.274.587.86.313 1.306zm.127-3.413C15.176 8.35 8.784 8.136 5.107 9.252c-.613.186-1.258-.167-1.444-.78-.186-.613.167-1.258.78-1.444 4.223-1.282 11.282-1.034 15.772 1.632.552.327.734 1.037.407 1.589-.327.552-1.037.734-1.589.407z"/>
   </svg>
 )
 
@@ -701,6 +708,46 @@ function App() {
                   </div>
                 </BlurFade>
               </div>
+            </section>
+
+            {/* Music / Currently Listening Widget Section */}
+            <section id="music" className="scroll-mt-12 pt-2">
+              <BlurFade delay={0.88}>
+                <div className="rounded-2xl border border-border/80 bg-card p-3.5 px-4 shadow-sm hover:shadow-md transition-all duration-300 max-w-2xl mx-auto flex items-center justify-between group">
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative size-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm bg-white">
+                      <img 
+                        src="/images/blueskydontcry_cover.jpg" 
+                        alt="Blue Sky, Don't Cry Album Cover" 
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                        <Spotify className="size-3.5 text-[#1DB954]" />
+                        <span>Last played</span>
+                      </div>
+                      <h3 className="font-bold text-sm text-foreground tracking-tight leading-tight">
+                        Blue Sky, Don't Cry
+                      </h3>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Dhruv
+                      </p>
+                    </div>
+                  </div>
+
+                  <a
+                    href="https://youtu.be/MFDS9bVWuDc?si=17A2F0ihfb3Xju1g"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="size-9 rounded-full bg-background border border-border/70 shadow-sm flex items-center justify-center hover:bg-muted hover:scale-105 active:scale-95 transition-all text-foreground group-hover:border-foreground/30 flex-shrink-0"
+                    title="Listen on YouTube"
+                  >
+                    <Play className="size-4 fill-current ml-0.5" />
+                  </a>
+                </div>
+              </BlurFade>
             </section>
 
             {/* Contact Section */}
