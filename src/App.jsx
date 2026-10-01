@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { TypeAnimation } from 'react-type-animation'
+import { GitHubCalendar } from 'react-github-calendar'
 import {
   Home,
   Folder,
@@ -665,6 +666,40 @@ function App() {
                     </BlurFade>
                   ))}
                 </div>
+              </div>
+            </section>
+
+            {/* GitHub Contributions Heatmap Section */}
+            <section id="github-heatmap" className="scroll-mt-12">
+              <div className="flex min-h-0 flex-col gap-y-3">
+                <BlurFade delay={0.82}>
+                  <div className="flex items-baseline gap-2">
+                    <h2 className="text-xl font-normal font-serif italic text-muted-foreground/90">
+                      GitHub Contributions
+                    </h2>
+                    <span className="text-sm font-sans font-normal text-muted-foreground/70">
+                      • @samiralam321
+                    </span>
+                  </div>
+                </BlurFade>
+                
+                <BlurFade delay={0.85}>
+                  <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-sm overflow-hidden flex justify-center">
+                    <div className="overflow-x-auto no-scrollbar w-full flex justify-center py-1">
+                      <GitHubCalendar
+                        username="samiralam321"
+                        colorScheme={darkMode ? 'dark' : 'light'}
+                        blockSize={12}
+                        blockMargin={4}
+                        fontSize={14}
+                        theme={{
+                          light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+                          dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                        }}
+                      />
+                    </div>
+                  </div>
+                </BlurFade>
               </div>
             </section>
 
