@@ -408,10 +408,11 @@ function App() {
 
   // Skills Data
   const skillsData = {
-    "Languages": ["C/C++", "Go", "Python", "JavaScript"],
-    "Frontend": ["HTML5", "CSS3", "JavaScript", "React.js"],
-    "Backend & Database": ["PostgreSQL", "MySQL", "MongoDB", "Redis", "Docker"],
-    "Tools & Platforms": ["GitHub", "VS Code", "Figma", "Notion", "Replit", "Antigravity"]
+    "Languages": ["C++", "Python", "JavaScript", "SQL"],
+    "Web Technologies": ["HTML5", "CSS3", "JavaScript", "React.js"],
+    "Backend & Databases": ["FastAPI", "REST APIs", "MySQL", "PostgreSQL", "Supabase"],
+    "Developer Tools": ["Git", "GitHub", "VS Code", "PyCharm", "Postman"],
+    "Core Concepts": ["Data Structures & Algorithms", "OOP", "DBMS", "Computer Networks", "Operating Systems"]
   }
 
   // Projects Data: Trackr & CP Master (mockups and short descriptions)
@@ -451,16 +452,27 @@ function App() {
     }
   ]
 
-  // Experience Data (Only Google Student Ambassador)
+  // Experience Data matching updated resume
   const experiences = [
+    {
+      role: "SDE Intern",
+      company: "Yuga Yatra Retail (OPC) Private Limited",
+      type: "Remote",
+      period: "May 2026 – Jul 2026",
+      bullets: [
+        "Worked primarily on frontend development and web application features.",
+        "Developed responsive user interfaces using HTML5, CSS3, JavaScript, and React.js.",
+        "Implemented frontend components and interactive features with a focus on responsive design; collaborated using Git and GitHub."
+      ]
+    },
     {
       role: "Google Student Ambassador",
       company: "Google",
       type: "Internship",
       period: "Aug 2025 – Feb 2026",
       bullets: [
-        "Selected to represent Google Gemini AI initiatives on campus.",
-        "Actively engaged in community building, innovation, and AI-focused learning initiatives."
+        "Conducted AI awareness sessions for 50+ students, introducing them to Google Gemini and practical AI use cases.",
+        "Strengthened leadership and communication skills through student engagement and AI-focused activities."
       ]
     }
   ]
