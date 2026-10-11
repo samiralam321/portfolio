@@ -229,7 +229,7 @@ function App() {
 
   const scrollToCalendarRight = () => {
     if (calendarScrollRef.current) {
-      calendarScrollRef.current.scrollLeft = calendarScrollRef.current.scrollWidth
+      calendarScrollRef.current.scrollLeft = 0
     }
   }
 
@@ -882,22 +882,25 @@ function App() {
                 </BlurFade>
                 
                 <BlurFade delay={0.85}>
-                  <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-sm overflow-hidden flex justify-center">
+                  <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-sm overflow-hidden">
                     <div 
                       ref={calendarScrollRef}
-                      className="overflow-x-auto no-scrollbar w-full flex justify-end py-1"
+                      className="overflow-x-auto no-scrollbar w-full py-1"
+                      style={{ direction: 'rtl' }}
                     >
-                      <GitHubCalendar
-                        username="samiralam321"
-                        colorScheme={darkMode ? 'dark' : 'light'}
-                        blockSize={12}
-                        blockMargin={4}
-                        fontSize={14}
-                        theme={{
-                          light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
-                          dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-                        }}
-                      />
+                      <div style={{ direction: 'ltr', display: 'inline-block', minWidth: 'max-content' }}>
+                        <GitHubCalendar
+                          username="samiralam321"
+                          colorScheme={darkMode ? 'dark' : 'light'}
+                          blockSize={12}
+                          blockMargin={4}
+                          fontSize={14}
+                          theme={{
+                            light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+                            dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </BlurFade>
