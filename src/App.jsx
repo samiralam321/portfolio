@@ -17,7 +17,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
-  Pause
+  Pause,
+  SkipBack,
+  SkipForward
 } from 'lucide-react'
 
 // Custom inline SVG icons for Github, Linkedin, Twitter, and Spotify
@@ -148,8 +150,27 @@ function App() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState(null) // null, 'sending', 'success'
 
+  // Music Playlist: Blush (first) and Blue Sky, Don't Cry (second)
+  const playlist = [
+    {
+      title: "Blush",
+      artist: "Prateek Kuhad",
+      cover: "/images/blush_cover.jpg",
+      audio: "https://res.cloudinary.com/dxarkutme/video/upload/v1791714019/Blush_-_Prateek_Kuhad_Lyrics_ipnpmi.m4a"
+    },
+    {
+      title: "Blue Sky, Don't Cry",
+      artist: "The Sways",
+      cover: "/images/blueskydontcry_cover.jpg",
+      audio: "https://res.cloudinary.com/dxarkutme/video/upload/v1790876397/The_Sways_-_Blue_Sky_Don_t_Cry_Official_Video_opabdg.m4a"
+    }
+  ]
+
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const audioRef = React.useRef(null)
+
+  const currentTrack = playlist[currentTrackIndex]
 
   const togglePlayAudio = () => {
     if (!audioRef.current) return
@@ -165,13 +186,92 @@ function App() {
     }
   }
 
+  const switchTrack = (direction) => {
+    const newIndex = direction === 'next' 
+      ? (currentTrackIndex + 1) % playlist.length
+      : (currentTrackIndex - 1 + playlist.length) % playlist.length
+    setCurrentTrackIndex(newIndex)
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.load()
+        if (isPlayingAudio) {
+          audioRef.current.play().then(() => {
+            setIsPlayingAudio(true)
+          }).catch(err => {
+            console.error("Audio playback error:", err)
+          })
+        }
+      }
+    }, 50)
+  }
+
   const handleAudioEnded = () => {
-    setIsPlayingAudio(false)
+    // When current track ends, advance to next track and continue playing
+    const nextIndex = (currentTrackIndex + 1) % playlist.length
+    setCurrentTrackIndex(nextIndex)
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.load()
+        audioRef.current.play().then(() => {
+          setIsPlayingAudio(true)
+        }).catch(err => {
+          console.error("Audio playback error:", err)
+        })
+      }
+    }, 100)
   }
 
   const projectsContainerRef = React.useRef(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
+
+  const calendarScrollRef = React.useRef(null)
+
+  const scrollToCalendarRight = () => {
+    if (calendarScrollRef.current) {
+      calendarScrollRef.current.scrollLeft = calendarScrollRef.current.scrollWidth
+    }
+  }
+
+  useEffect(() => {
+    const container = calendarScrollRef.current
+    if (!container) return
+
+    scrollToCalendarRight()
+
+    const mutationObserver = new MutationObserver(() => {
+      scrollToCalendarRight()
+    })
+    mutationObserver.observe(container, { childList: true, subtree: true, attributes: true })
+
+    let resizeObserver
+    if (window.ResizeObserver) {
+      resizeObserver = new ResizeObserver(() => {
+        scrollToCalendarRight()
+      })
+      resizeObserver.observe(container)
+      const svg = container.querySelector('svg')
+      if (svg) resizeObserver.observe(svg)
+    }
+
+    window.addEventListener('resize', scrollToCalendarRight)
+    const t0 = setTimeout(scrollToCalendarRight, 50)
+    const t1 = setTimeout(scrollToCalendarRight, 200)
+    const t2 = setTimeout(scrollToCalendarRight, 600)
+    const t3 = setTimeout(scrollToCalendarRight, 1200)
+    const t4 = setTimeout(scrollToCalendarRight, 2500)
+
+    return () => {
+      mutationObserver.disconnect()
+      if (resizeObserver) resizeObserver.disconnect()
+      window.removeEventListener('resize', scrollToCalendarRight)
+      clearTimeout(t0)
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+      clearTimeout(t4)
+    }
+  }, [view])
 
   const checkScrollButtons = () => {
     if (projectsContainerRef.current) {
@@ -452,7 +552,7 @@ function App() {
               <BlurFade delay={0.22}>
                 <audio 
                   ref={audioRef} 
-                  src="https://res.cloudinary.com/dxarkutme/video/upload/v1790876397/The_Sways_-_Blue_Sky_Don_t_Cry_Official_Video_opabdg.m4a" 
+                  src={currentTrack.audio} 
                   onEnded={handleAudioEnded}
                   preload="metadata"
                 />
@@ -460,8 +560,8 @@ function App() {
                   <div className="flex items-center gap-3.5">
                     <div className="relative size-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm bg-white">
                       <img 
-                        src="/images/blueskydontcry_cover.jpg" 
-                        alt="Blue Sky, Don't Cry Album Cover" 
+                        src={currentTrack.cover} 
+                        alt={`${currentTrack.title} Album Cover`} 
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
@@ -472,26 +572,46 @@ function App() {
                         <span>{isPlayingAudio ? 'Now playing' : 'Last played'}</span>
                       </div>
                       <h3 className="font-bold text-sm text-foreground tracking-tight leading-tight">
-                        Blue Sky, Don't Cry
+                        {currentTrack.title}
                       </h3>
                       <p className="text-xs text-muted-foreground font-medium">
-                        The Sways
+                        {currentTrack.artist}
                       </p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={togglePlayAudio}
-                    type="button"
-                    className="size-9 rounded-full bg-background border border-border/70 shadow-sm flex items-center justify-center hover:bg-muted hover:scale-105 active:scale-95 transition-all text-foreground group-hover:border-foreground/30 flex-shrink-0 cursor-pointer"
-                    title={isPlayingAudio ? "Pause" : "Play"}
-                  >
-                    {isPlayingAudio ? (
-                      <Pause className="size-4 fill-current ml-0" />
-                    ) : (
-                      <Play className="size-4 fill-current ml-0.5" />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => switchTrack('prev')}
+                      type="button"
+                      className="size-8 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all text-muted-foreground hover:text-foreground cursor-pointer"
+                      title="Previous track"
+                    >
+                      <SkipBack className="size-3.5 fill-current" />
+                    </button>
+
+                    <button
+                      onClick={togglePlayAudio}
+                      type="button"
+                      className="size-9 rounded-full bg-background border border-border/70 shadow-sm flex items-center justify-center hover:bg-muted hover:scale-105 active:scale-95 transition-all text-foreground group-hover:border-foreground/30 cursor-pointer"
+                      title={isPlayingAudio ? "Pause" : "Play"}
+                    >
+                      {isPlayingAudio ? (
+                        <Pause className="size-4 fill-current ml-0" />
+                      ) : (
+                        <Play className="size-4 fill-current ml-0.5" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => switchTrack('next')}
+                      type="button"
+                      className="size-8 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all text-muted-foreground hover:text-foreground cursor-pointer"
+                      title="Next track"
+                    >
+                      <SkipForward className="size-3.5 fill-current" />
+                    </button>
+                  </div>
                 </div>
               </BlurFade>
             </section>
@@ -763,7 +883,10 @@ function App() {
                 
                 <BlurFade delay={0.85}>
                   <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-sm overflow-hidden flex justify-center">
-                    <div className="overflow-x-auto no-scrollbar w-full flex justify-center py-1">
+                    <div 
+                      ref={calendarScrollRef}
+                      className="overflow-x-auto no-scrollbar w-full flex justify-end py-1"
+                    >
                       <GitHubCalendar
                         username="samiralam321"
                         colorScheme={darkMode ? 'dark' : 'light'}
