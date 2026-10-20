@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { TypeAnimation } from 'react-type-animation'
 import { GitHubCalendar } from 'react-github-calendar'
 import {
   Home,
   Folder,
-  User,
   Sun,
   Moon,
   Globe,
@@ -19,7 +18,15 @@ import {
   Play,
   Pause,
   SkipBack,
-  SkipForward
+  SkipForward,
+  ExternalLink,
+  Search,
+  X,
+  RefreshCw,
+  Calendar,
+  Clock,
+  Tag,
+  ArrowRight
 } from 'lucide-react'
 
 // Custom inline SVG icons for Github, Linkedin, Twitter, and Spotify
@@ -47,6 +54,13 @@ const Twitter = ({ className = "size-4" }) => (
 const Spotify = ({ className = "size-4 text-[#1DB954]" }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor">
     <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm5.521 17.341c-.218.358-.684.471-1.042.253-2.863-1.748-6.463-2.143-10.706-1.171-.407.094-.817-.161-.911-.567-.094-.407.161-.817.567-.911 4.647-1.064 8.625-.612 11.84 1.353.358.218.471.684.252 1.043zm1.472-3.273c-.274.446-.86.587-1.306.313-3.275-2.012-8.269-2.597-12.144-1.421-.5.152-1.026-.134-1.178-.634-.152-.5.134-1.026.634-1.178 4.426-1.343 9.924-.694 13.681 1.614.446.274.587.86.313 1.306zm.127-3.413C15.176 8.35 8.784 8.136 5.107 9.252c-.613.186-1.258-.167-1.444-.78-.186-.613.167-1.258.78-1.444 4.223-1.282 11.282-1.034 15.772 1.632.552.327.734 1.037.407 1.589-.327.552-1.037.734-1.589.407z"/>
+  </svg>
+)
+
+// Medium icon SVG component
+const MediumIcon = ({ className = "size-4" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/>
   </svg>
 )
 
@@ -140,13 +154,488 @@ const DockIcon = ({ children, mouseX, onClick, href, target, rel, title }) => {
   )
 }
 
+// ─── Medium Articles Fetcher & Cache ─────────────────────────────────────────
+const MEDIUM_USERNAME = 'sa8103339'
+const ARTICLES_CACHE_KEY = 'medium_articles_cache'
+const ARTICLES_CACHE_TTL = 10 * 60 * 1000 // 10 minutes
+
+function getCachedArticles() {
+  try {
+    const raw = localStorage.getItem(ARTICLES_CACHE_KEY)
+    if (!raw) return null
+    const { articles, timestamp } = JSON.parse(raw)
+    if (Date.now() - timestamp > ARTICLES_CACHE_TTL) return null
+    return articles
+  } catch {
+    return null
+  }
+}
+
+function setCachedArticles(articles) {
+  try {
+    localStorage.setItem(ARTICLES_CACHE_KEY, JSON.stringify({ articles, timestamp: Date.now() }))
+  } catch {
+    // storage full — ignore
+  }
+}
+
+function parseRssXml(xmlString) {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(xmlString, 'text/xml')
+  const itemEls = Array.from(doc.querySelectorAll('item'))
+  return itemEls.map((item) => {
+    const title = item.querySelector('title')?.textContent || 'Untitled'
+    let link = item.querySelector('link')?.textContent || '#'
+    if (link.includes('?source=')) {
+      link = link.split('?source=')[0]
+    }
+    const pubDate = item.querySelector('pubDate')?.textContent || ''
+    const author = item.getElementsByTagNameNS('*', 'creator')[0]?.textContent || MEDIUM_USERNAME
+    
+    // Content can be in content:encoded or description
+    const content = item.getElementsByTagNameNS('*', 'encoded')[0]?.textContent || item.querySelector('description')?.textContent || ''
+    
+    // Extract thumbnail
+    const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/)
+    const thumbnail = imgMatch ? imgMatch[1] : null
+    
+    // Extract categories
+    const categories = Array.from(item.querySelectorAll('category')).map(c => c.textContent).filter(Boolean)
+    
+    // Clean text for excerpt
+    const cleanText = content.replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim()
+    const excerpt = cleanText.length > 180 ? cleanText.slice(0, 177) + '...' : cleanText
+    
+    const wordCount = cleanText.split(/\s+/).filter(Boolean).length
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200))
+    
+    return {
+      title,
+      link,
+      pubDate,
+      author,
+      thumbnail,
+      excerpt,
+      categories,
+      readingTime
+    }
+  })
+}
+
+async function fetchMediumArticles() {
+  const cached = getCachedArticles()
+  if (cached) return cached
+
+  // 1. Try /api/articles (Vercel Serverless Function & Vite dev server middleware)
+  try {
+    const res = await fetch('/api/articles')
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data.articles) && data.articles.length > 0) {
+        setCachedArticles(data.articles)
+        return data.articles
+      }
+    }
+  } catch (e) {
+    console.warn('Local /api/articles unavailable, trying backup proxy...', e)
+  }
+
+  // 2. Fallback to CORS proxy with direct browser XML parsing
+  try {
+    const proxyRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://medium.com/feed/@${MEDIUM_USERNAME}`)}`)
+    if (proxyRes.ok) {
+      const xml = await proxyRes.text()
+      const parsed = parseRssXml(xml)
+      if (parsed.length > 0) {
+        setCachedArticles(parsed)
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.warn('Backup proxy failed...', e)
+  }
+
+  throw new Error('Unable to retrieve Medium articles feed.')
+}
+
+// ─── Article Card Skeleton Loader ────────────────────────────────────────────
+const ArticleCardSkeleton = () => (
+  <div className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
+    <div className="h-44 bg-muted" />
+    <div className="p-4 space-y-3">
+      <div className="h-4 bg-muted rounded w-3/4" />
+      <div className="h-3 bg-muted rounded w-full" />
+      <div className="h-3 bg-muted rounded w-5/6" />
+      <div className="flex gap-2 pt-1">
+        <div className="h-5 w-14 bg-muted rounded-full" />
+        <div className="h-5 w-14 bg-muted rounded-full" />
+      </div>
+    </div>
+  </div>
+)
+
+// ─── Article Card Component ──────────────────────────────────────────────────
+const ArticleCard = ({ article, index }) => {
+  const [imgError, setImgError] = useState(false)
+  const formattedDate = article.pubDate
+    ? new Date(article.pubDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+    : null
+
+  return (
+    <BlurFade delay={0.1 + index * 0.05}>
+      <a
+        href={article.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group block rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg hover:border-border/60 hover:-translate-y-1 transition-all duration-300 ease-out h-full"
+      >
+        {/* Cover Image */}
+        <div className="relative h-44 bg-muted overflow-hidden">
+          {article.thumbnail && !imgError ? (
+            <img
+              src={article.thumbnail}
+              alt={article.title}
+              loading="lazy"
+              onError={() => setImgError(true)}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-muted to-secondary">
+              <BookOpen className="size-10 text-muted-foreground/40" />
+            </div>
+          )}
+        </div>
+
+        {/* Card Body */}
+        <div className="p-4 flex flex-col gap-2.5">
+          {/* Meta row */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {formattedDate && (
+              <span className="flex items-center gap-1">
+                <Calendar className="size-3" />
+                <time dateTime={article.pubDate}>{formattedDate}</time>
+              </span>
+            )}
+            {article.readingTime && (
+              <span className="flex items-center gap-1">
+                <Clock className="size-3" />
+                {article.readingTime} min read
+              </span>
+            )}
+          </div>
+
+          {/* Title */}
+          <h3 className="font-bold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary/80 transition-colors">
+            {article.title}
+          </h3>
+
+          {/* Excerpt */}
+          {article.excerpt && (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+              {article.excerpt}
+            </p>
+          )}
+
+          {/* Tags */}
+          {article.categories.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {article.categories.slice(0, 3).map((tag, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-0.5 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-[10px] font-medium"
+                >
+                  <Tag className="size-2.5" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Read more */}
+          <div className="flex items-center gap-1 text-xs font-semibold text-foreground pt-1 group-hover:gap-2 transition-all">
+            Read Article
+            <ArrowRight className="size-3" />
+          </div>
+        </div>
+      </a>
+    </BlurFade>
+  )
+}
+
+// ─── Articles Page View ──────────────────────────────────────────────────────
+const ArticlesView = ({ onBack }) => {
+  const [articles, setArticles] = useState([])
+  const [status, setStatus] = useState('loading') // 'loading' | 'success' | 'empty' | 'error'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTag, setSelectedTag] = useState(null)
+
+  const loadArticles = useCallback(async () => {
+    setStatus('loading')
+    try {
+      const data = await fetchMediumArticles()
+      if (data.length === 0) {
+        setStatus('empty')
+      } else {
+        setArticles(data)
+        setStatus('success')
+      }
+    } catch (err) {
+      console.error('Failed to fetch articles:', err)
+      setStatus('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    loadArticles()
+  }, [loadArticles])
+
+  // Collect all unique tags
+  const allTags = useMemo(() => {
+    const tags = new Set()
+    articles.forEach((a) => a.categories.forEach((c) => tags.add(c)))
+    return Array.from(tags).sort()
+  }, [articles])
+
+  // Filtered articles
+  const filteredArticles = useMemo(() => {
+    let result = articles
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(
+        (a) =>
+          a.title.toLowerCase().includes(q) ||
+          a.excerpt.toLowerCase().includes(q)
+      )
+    }
+    if (selectedTag) {
+      result = result.filter((a) => a.categories.includes(selectedTag))
+    }
+    return result
+  }, [articles, searchQuery, selectedTag])
+
+  return (
+    <motion.div
+      key="articles-page"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="flex flex-col space-y-8 pb-24"
+    >
+      {/* Page Header */}
+      <section>
+        <BlurFade delay={0.05}>
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 cursor-pointer group"
+          >
+            <ChevronLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+            Back to Home
+          </button>
+        </BlurFade>
+
+        <div className="space-y-3">
+          <BlurFade delay={0.1}>
+            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+              My Articles
+            </h1>
+          </BlurFade>
+
+          <BlurFade delay={0.15}>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+              Thoughts, learnings, and experiences from my journey in software development, AI, and technology.
+            </p>
+          </BlurFade>
+
+          <BlurFade delay={0.2}>
+            <a
+              href={`https://medium.com/@${MEDIUM_USERNAME}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary/80 transition-colors mt-1"
+            >
+              <MediumIcon className="size-4" />
+              View on Medium
+              <ExternalLink className="size-3" />
+            </a>
+          </BlurFade>
+        </div>
+      </section>
+
+      {/* Search & Filters – only show when we have articles */}
+      {status === 'success' && articles.length > 0 && (
+        <section>
+          <BlurFade delay={0.25}>
+            <div className="space-y-3">
+              {/* Search bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search articles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                    title="Clear search"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Tag filters */}
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setSelectedTag(null)}
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer border ${
+                      !selectedTag
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-secondary text-secondary-foreground border-border hover:bg-muted'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer border ${
+                        selectedTag === tag
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-secondary text-secondary-foreground border-border hover:bg-muted'
+                      }`}
+                    >
+                      <Tag className="size-2.5" />
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </BlurFade>
+        </section>
+      )}
+
+      {/* Content States */}
+      <section>
+        {/* Loading */}
+        {status === 'loading' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <ArticleCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Success */}
+        {status === 'success' && filteredArticles.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredArticles.map((article, i) => (
+              <ArticleCard key={article.link} article={article} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* No search results */}
+        {status === 'success' && filteredArticles.length === 0 && articles.length > 0 && (
+          <BlurFade delay={0.1}>
+            <div className="text-center py-16 space-y-3">
+              <Search className="size-10 text-muted-foreground/40 mx-auto" />
+              <p className="text-muted-foreground text-sm">No articles match your search.</p>
+              <button
+                onClick={() => { setSearchQuery(''); setSelectedTag(null) }}
+                className="text-sm font-medium text-foreground hover:text-primary/80 transition-colors cursor-pointer"
+              >
+                Clear filters
+              </button>
+            </div>
+          </BlurFade>
+        )}
+
+        {/* Empty – feed loaded but no articles */}
+        {status === 'empty' && (
+          <BlurFade delay={0.1}>
+            <div className="text-center py-16 space-y-3">
+              <BookOpen className="size-10 text-muted-foreground/40 mx-auto" />
+              <p className="text-muted-foreground text-sm">No articles published yet.</p>
+              <a
+                href={`https://medium.com/@${MEDIUM_USERNAME}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary/80 transition-colors"
+              >
+                Visit my Medium profile
+                <ExternalLink className="size-3" />
+              </a>
+            </div>
+          </BlurFade>
+        )}
+
+        {/* Error */}
+        {status === 'error' && (
+          <BlurFade delay={0.1}>
+            <div className="text-center py-16 space-y-4">
+              <div className="size-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                <X className="size-6 text-destructive" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-foreground font-medium text-sm">Couldn't load articles</p>
+                <p className="text-muted-foreground text-xs max-w-sm mx-auto">
+                  We couldn't load the articles right now. Please try again later or visit my Medium profile directly.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => {
+                    localStorage.removeItem(ARTICLES_CACHE_KEY)
+                    loadArticles()
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground shadow hover:bg-primary/90 transition-all cursor-pointer"
+                >
+                  <RefreshCw className="size-3.5" />
+                  Try Again
+                </button>
+                <a
+                  href={`https://medium.com/@${MEDIUM_USERNAME}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-border bg-background hover:bg-muted transition-all"
+                >
+                  View on Medium
+                  <ExternalLink className="size-3" />
+                </a>
+              </div>
+            </div>
+          </BlurFade>
+        )}
+      </section>
+    </motion.div>
+  )
+}
+
+// ─── Main App ────────────────────────────────────────────────────────────────
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark' || 
       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
   })
 
-  const [view, setView] = useState('home') // 'home' or 'contact'
+  const getInitialView = () => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase()
+      if (path === '/articles' || path.startsWith('/articles/')) return 'articles'
+      if (path === '/contact') return 'contact'
+    }
+    return 'home'
+  }
+
+  const [view, setView] = useState(getInitialView)
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState(null) // null, 'sending', 'success'
 
@@ -333,9 +822,25 @@ function App() {
     }, 4000)
   }
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase()
+      if (path === '/articles' || path.startsWith('/articles/')) {
+        setView('articles')
+      } else if (path === '/contact') {
+        setView('contact')
+      } else {
+        setView('home')
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   const handleNav = (targetView, sectionId) => {
     setView(targetView)
     if (targetView === 'home') {
+      window.history.pushState(null, '', '/')
       if (sectionId) {
         setTimeout(() => {
           scrollToSection(sectionId)
@@ -343,6 +848,12 @@ function App() {
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
+    } else if (targetView === 'articles') {
+      window.history.pushState(null, '', '/articles')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (targetView === 'contact') {
+      window.history.pushState(null, '', '/contact')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -391,6 +902,15 @@ function App() {
     } else {
       document.body.classList.remove('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
       document.body.classList.add('py-12', 'sm:py-24')
+    }
+  }, [view])
+
+  // Update document title for articles page
+  useEffect(() => {
+    if (view === 'articles') {
+      document.title = 'Articles — Samir Alam'
+    } else {
+      document.title = 'Samir Alam - Backend Developer & Competitive Programmer'
     }
   }, [view])
 
@@ -940,6 +1460,8 @@ function App() {
               </div>
             </section>
           </motion.div>
+        ) : view === 'articles' ? (
+          <ArticlesView onBack={() => handleNav('home')} />
         ) : (
           <motion.div
             key="contact-page"
@@ -1053,6 +1575,11 @@ function App() {
           
           <DockIcon href="https://x.com/SamAlCse" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
             <Twitter className="size-[19px]" />
+          </DockIcon>
+
+          {/* Medium Articles Icon – after Twitter/X, before Mail */}
+          <DockIcon onClick={() => handleNav('articles')} title="Medium Articles">
+            <BookOpen className="size-[19px]" />
           </DockIcon>
           
           <DockIcon onClick={() => handleNav('contact')} title="Contact">
