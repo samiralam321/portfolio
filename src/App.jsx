@@ -23,10 +23,7 @@ import {
   Search,
   X,
   RefreshCw,
-  Calendar,
-  Clock,
-  Tag,
-  ArrowRight
+  Tag
 } from 'lucide-react'
 
 // Custom inline SVG icons for Github, Linkedin, Twitter, and Spotify
@@ -179,12 +176,32 @@ function setCachedArticles(articles) {
   }
 }
 
+function decodeHtmlEntities(str) {
+  if (!str) return ''
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+}
+
+function formatTag(tag) {
+  if (!tag) return ''
+  return tag
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
 function parseRssXml(xmlString) {
   const parser = new DOMParser()
   const doc = parser.parseFromString(xmlString, 'text/xml')
   const itemEls = Array.from(doc.querySelectorAll('item'))
   return itemEls.map((item) => {
-    const title = item.querySelector('title')?.textContent || 'Untitled'
+    const rawTitle = item.querySelector('title')?.textContent || 'Untitled'
+    const title = decodeHtmlEntities(rawTitle.trim())
     let link = item.querySelector('link')?.textContent || '#'
     if (link.includes('?source=')) {
       link = link.split('?source=')[0]
@@ -260,16 +277,11 @@ async function fetchMediumArticles() {
 
 // ─── Article Card Skeleton Loader ────────────────────────────────────────────
 const ArticleCardSkeleton = () => (
-  <div className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
-    <div className="h-44 bg-muted" />
-    <div className="p-4 space-y-3">
-      <div className="h-4 bg-muted rounded w-3/4" />
-      <div className="h-3 bg-muted rounded w-full" />
-      <div className="h-3 bg-muted rounded w-5/6" />
-      <div className="flex gap-2 pt-1">
-        <div className="h-5 w-14 bg-muted rounded-full" />
-        <div className="h-5 w-14 bg-muted rounded-full" />
-      </div>
+  <div className="rounded-2xl border border-border bg-card overflow-hidden animate-pulse flex flex-col h-full shadow-sm">
+    <div className="w-full aspect-[16/10] bg-muted/60" />
+    <div className="p-4 sm:p-5 space-y-2.5 flex-1">
+      <div className="h-4 bg-muted/80 rounded w-5/6" />
+      <div className="h-4 bg-muted/60 rounded w-3/5" />
     </div>
   </div>
 )
@@ -277,85 +289,37 @@ const ArticleCardSkeleton = () => (
 // ─── Article Card Component ──────────────────────────────────────────────────
 const ArticleCard = ({ article, index }) => {
   const [imgError, setImgError] = useState(false)
-  const formattedDate = article.pubDate
-    ? new Date(article.pubDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-    : null
 
   return (
-    <BlurFade delay={0.1 + index * 0.05}>
+    <BlurFade delay={0.08 + index * 0.04} className="h-full">
       <a
         href={article.link}
         target="_blank"
         rel="noopener noreferrer"
-        className="group block rounded-xl border border-border bg-card overflow-hidden hover:shadow-lg hover:border-border/60 hover:-translate-y-1 transition-all duration-300 ease-out h-full"
+        className="group flex flex-col rounded-2xl border border-border bg-card text-card-foreground overflow-hidden hover:shadow-xl hover:border-border/90 hover:-translate-y-1 transition-all duration-300 ease-out h-full"
       >
-        {/* Cover Image */}
-        <div className="relative h-44 bg-muted overflow-hidden">
+        {/* Complete cover image container - object-contain preserves entire image without cropping */}
+        <div className="relative w-full aspect-[16/10] bg-white dark:bg-[#121214] flex items-center justify-center p-3 sm:p-4 border-b border-border/50 overflow-hidden">
           {article.thumbnail && !imgError ? (
             <img
               src={article.thumbnail}
               alt={article.title}
               loading="lazy"
               onError={() => setImgError(true)}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
             />
           ) : (
-            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-muted to-secondary">
-              <BookOpen className="size-10 text-muted-foreground/40" />
+            <div className="w-full h-full flex items-center justify-center bg-muted/40">
+              <BookOpen className="size-12 text-muted-foreground/30" />
             </div>
           )}
         </div>
 
-        {/* Card Body */}
-        <div className="p-4 flex flex-col gap-2.5">
-          {/* Meta row */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {formattedDate && (
-              <span className="flex items-center gap-1">
-                <Calendar className="size-3" />
-                <time dateTime={article.pubDate}>{formattedDate}</time>
-              </span>
-            )}
-            {article.readingTime && (
-              <span className="flex items-center gap-1">
-                <Clock className="size-3" />
-                {article.readingTime} min read
-              </span>
-            )}
-          </div>
-
-          {/* Title */}
-          <h3 className="font-bold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary/80 transition-colors">
+        {/* Title only below the image */}
+        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-start">
+          <h3 className="font-bold text-base sm:text-lg text-foreground tracking-tight leading-snug group-hover:text-primary transition-colors">
             {article.title}
           </h3>
-
-          {/* Excerpt */}
-          {article.excerpt && (
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-              {article.excerpt}
-            </p>
-          )}
-
-          {/* Tags */}
-          {article.categories.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              {article.categories.slice(0, 3).map((tag, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-[10px] font-medium"
-                >
-                  <Tag className="size-2.5" />
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Read more */}
-          <div className="flex items-center gap-1 text-xs font-semibold text-foreground pt-1 group-hover:gap-2 transition-all">
-            Read Article
-            <ArrowRight className="size-3" />
-          </div>
         </div>
       </a>
     </BlurFade>
@@ -404,7 +368,7 @@ const ArticlesView = ({ onBack }) => {
       result = result.filter(
         (a) =>
           a.title.toLowerCase().includes(q) ||
-          a.excerpt.toLowerCase().includes(q)
+          (a.excerpt && a.excerpt.toLowerCase().includes(q))
       )
     }
     if (selectedTag) {
@@ -420,113 +384,113 @@ const ArticlesView = ({ onBack }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className="flex flex-col space-y-8 pb-24"
+      className="flex flex-col space-y-6 sm:space-y-8 pb-24 w-full"
     >
-      {/* Page Header */}
-      <section>
-        <BlurFade delay={0.05}>
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 cursor-pointer group"
-          >
-            <ChevronLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
-            Back to Home
-          </button>
+      {/* Breadcrumb & Header */}
+      <section className="space-y-4">
+        <BlurFade delay={0.04}>
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            <button
+              onClick={onBack}
+              className="hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
+              title="Back to Home"
+            >
+              <Home className="size-3.5" />
+              <span>HOME</span>
+            </button>
+            <span className="text-muted-foreground/50">/</span>
+            <span className="text-foreground font-semibold">ARTICLES</span>
+          </div>
         </BlurFade>
 
-        <div className="space-y-3">
-          <BlurFade delay={0.1}>
-            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-              My Articles
-            </h1>
-          </BlurFade>
+        <BlurFade delay={0.08}>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="space-y-1.5 max-w-2xl">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+                My Articles
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Thoughts, learnings, and experiences from my journey in software development, AI, and technology.
+              </p>
+            </div>
 
-          <BlurFade delay={0.15}>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
-              Thoughts, learnings, and experiences from my journey in software development, AI, and technology.
-            </p>
-          </BlurFade>
-
-          <BlurFade delay={0.2}>
             <a
               href={`https://medium.com/@${MEDIUM_USERNAME}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary/80 transition-colors mt-1"
+              className="inline-flex items-center gap-2 self-start rounded-xl border border-border bg-card px-4 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-sm hover:bg-muted hover:border-foreground/30 active:scale-95 transition-all shrink-0"
             >
               <MediumIcon className="size-4" />
-              View on Medium
-              <ExternalLink className="size-3" />
+              <span>View on Medium</span>
+              <ExternalLink className="size-3 text-muted-foreground" />
             </a>
-          </BlurFade>
-        </div>
+          </div>
+        </BlurFade>
       </section>
 
-      {/* Search & Filters – only show when we have articles */}
+      {/* Search & Tag Filter Bar */}
       {status === 'success' && articles.length > 0 && (
-        <section>
-          <BlurFade delay={0.25}>
-            <div className="space-y-3">
-              {/* Search bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search articles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                    title="Clear search"
-                  >
-                    <X className="size-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Tag filters */}
-              {allTags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setSelectedTag(null)}
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer border ${
-                      !selectedTag
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-secondary text-secondary-foreground border-border hover:bg-muted'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {allTags.map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer border ${
-                        selectedTag === tag
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-secondary text-secondary-foreground border-border hover:bg-muted'
-                      }`}
-                    >
-                      <Tag className="size-2.5" />
-                      {tag}
-                    </button>
-                  ))}
-                </div>
+        <BlurFade delay={0.12}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            {/* Search Input */}
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-9 py-2 rounded-xl border border-border bg-card text-foreground placeholder-muted-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="size-3.5" />
+                </button>
               )}
             </div>
-          </BlurFade>
-        </section>
+
+            {/* Category Filter Pills */}
+            {allTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                <button
+                  onClick={() => setSelectedTag(null)}
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer border ${
+                    !selectedTag
+                      ? 'bg-foreground text-background border-foreground shadow-sm'
+                      : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  All
+                </button>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer border ${
+                      selectedTag === tag
+                        ? 'bg-foreground text-background border-foreground shadow-sm'
+                        : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Tag className="size-3" />
+                    <span>{formatTag(tag)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </BlurFade>
       )}
 
       {/* Content States */}
       <section>
         {/* Loading */}
         {status === 'loading' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <ArticleCardSkeleton key={i} />
             ))}
@@ -535,7 +499,7 @@ const ArticlesView = ({ onBack }) => {
 
         {/* Success */}
         {status === 'success' && filteredArticles.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {filteredArticles.map((article, i) => (
               <ArticleCard key={article.link} article={article} index={i} />
             ))}
@@ -897,11 +861,14 @@ function App() {
 
   useEffect(() => {
     if (view === 'contact') {
-      document.body.classList.remove('py-12', 'sm:py-24')
-      document.body.classList.add('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
+      document.body.classList.remove('py-12', 'sm:py-24', 'max-w-5xl')
+      document.body.classList.add('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden', 'max-w-2xl')
+    } else if (view === 'articles') {
+      document.body.classList.remove('max-w-2xl', 'py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
+      document.body.classList.add('max-w-5xl', 'py-10', 'sm:py-16')
     } else {
-      document.body.classList.remove('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
-      document.body.classList.add('py-12', 'sm:py-24')
+      document.body.classList.remove('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden', 'max-w-5xl')
+      document.body.classList.add('py-12', 'sm:py-24', 'max-w-2xl')
     }
   }, [view])
 

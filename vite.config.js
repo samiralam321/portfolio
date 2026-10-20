@@ -20,6 +20,15 @@ function mediumArticlesDevPlugin() {
           
           const articles = items.map(it => {
             const titleMatch = it.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || it.match(/<title>([\s\S]*?)<\/title>/)
+            const rawTitle = titleMatch ? titleMatch[1].trim() : 'Untitled'
+            const title = rawTitle
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .replace(/&#x27;/g, "'")
+              .replace(/&nbsp;/g, ' ')
             const linkMatch = it.match(/<link>([\s\S]*?)<\/link>/)
             const pubDateMatch = it.match(/<pubDate>([\s\S]*?)<\/pubDate>/)
             const creatorMatch = it.match(/<dc:creator><!\[CDATA\[([\s\S]*?)\]\]><\/dc:creator>/) || it.match(/<dc:creator>([\s\S]*?)<\/dc:creator>/)
@@ -42,7 +51,7 @@ function mediumArticlesDevPlugin() {
             const readingTime = Math.max(1, Math.ceil(wordCount / 200))
             
             return {
-              title: titleMatch ? titleMatch[1].trim() : 'Untitled',
+              title,
               link,
               pubDate: pubDateMatch ? pubDateMatch[1].trim() : '',
               author: creatorMatch ? creatorMatch[1].trim() : 'Samir',
