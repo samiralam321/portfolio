@@ -277,11 +277,11 @@ async function fetchMediumArticles() {
 
 // ─── Article Card Skeleton Loader ────────────────────────────────────────────
 const ArticleCardSkeleton = () => (
-  <div className="rounded-2xl border border-border bg-card overflow-hidden animate-pulse flex flex-col h-full shadow-sm">
+  <div className="rounded-xl border border-border bg-card overflow-hidden animate-pulse flex flex-col h-full shadow-sm">
     <div className="w-full aspect-[16/10] bg-muted/60" />
-    <div className="p-4 sm:p-5 space-y-2.5 flex-1">
-      <div className="h-4 bg-muted/80 rounded w-5/6" />
-      <div className="h-4 bg-muted/60 rounded w-3/5" />
+    <div className="p-2.5 sm:p-3 space-y-2 flex-1">
+      <div className="h-3.5 bg-muted/80 rounded w-5/6" />
+      <div className="h-3 bg-muted/60 rounded w-3/5" />
     </div>
   </div>
 )
@@ -296,10 +296,10 @@ const ArticleCard = ({ article, index }) => {
         href={article.link}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex flex-col rounded-2xl border border-border bg-card text-card-foreground overflow-hidden hover:shadow-xl hover:border-border/90 hover:-translate-y-1 transition-all duration-300 ease-out h-full"
+        className="group flex flex-col rounded-xl border border-border bg-card text-card-foreground overflow-hidden hover:shadow-lg hover:border-border/80 hover:-translate-y-0.5 transition-all duration-300 ease-out h-full"
       >
         {/* Complete cover image container - object-contain preserves entire image without cropping */}
-        <div className="relative w-full aspect-[16/10] bg-white dark:bg-[#121214] flex items-center justify-center p-3 sm:p-4 border-b border-border/50 overflow-hidden">
+        <div className="relative w-full aspect-[16/10] bg-white dark:bg-[#121214] flex items-center justify-center p-2 sm:p-2.5 border-b border-border/50 overflow-hidden">
           {article.thumbnail && !imgError ? (
             <img
               src={article.thumbnail}
@@ -310,14 +310,14 @@ const ArticleCard = ({ article, index }) => {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted/40">
-              <BookOpen className="size-12 text-muted-foreground/30" />
+              <BookOpen className="size-8 text-muted-foreground/30" />
             </div>
           )}
         </div>
 
         {/* Title only below the image */}
-        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-start">
-          <h3 className="font-bold text-base sm:text-lg text-foreground tracking-tight leading-snug group-hover:text-primary transition-colors">
+        <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-start">
+          <h3 className="font-bold text-xs sm:text-[13px] text-foreground tracking-tight leading-snug group-hover:text-primary transition-colors line-clamp-3">
             {article.title}
           </h3>
         </div>
@@ -384,18 +384,18 @@ const ArticlesView = ({ onBack }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className="flex flex-col space-y-6 sm:space-y-8 pb-24 w-full"
+      className="flex flex-col space-y-6 pb-20 w-full"
     >
       {/* Breadcrumb & Header */}
-      <section className="space-y-4">
+      <section className="space-y-3">
         <BlurFade delay={0.04}>
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
             <button
               onClick={onBack}
               className="hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
               title="Back to Home"
             >
-              <Home className="size-3.5" />
+              <Home className="size-3" />
               <span>HOME</span>
             </button>
             <span className="text-muted-foreground/50">/</span>
@@ -404,12 +404,12 @@ const ArticlesView = ({ onBack }) => {
         </BlurFade>
 
         <BlurFade delay={0.08}>
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="space-y-1.5 max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1 flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 My Articles
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Thoughts, learnings, and experiences from my journey in software development, AI, and technology.
               </p>
             </div>
@@ -418,11 +418,11 @@ const ArticlesView = ({ onBack }) => {
               href={`https://medium.com/@${MEDIUM_USERNAME}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 self-start rounded-xl border border-border bg-card px-4 py-2 text-xs sm:text-sm font-semibold text-foreground shadow-sm hover:bg-muted hover:border-foreground/30 active:scale-95 transition-all shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-sm hover:bg-muted hover:border-foreground/30 active:scale-95 transition-all shrink-0 mt-0.5"
             >
-              <MediumIcon className="size-4" />
+              <MediumIcon className="size-3.5" />
               <span>View on Medium</span>
-              <ExternalLink className="size-3 text-muted-foreground" />
+              <ExternalLink className="size-2.5 text-muted-foreground" />
             </a>
           </div>
         </BlurFade>
@@ -431,21 +431,21 @@ const ArticlesView = ({ onBack }) => {
       {/* Search & Tag Filter Bar */}
       {status === 'success' && articles.length > 0 && (
         <BlurFade delay={0.12}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          <div className="space-y-2.5 pt-0.5">
             {/* Search Input */}
-            <div className="relative w-full sm:max-w-xs">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search articles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-9 py-2 rounded-xl border border-border bg-card text-foreground placeholder-muted-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm"
+                className="w-full pl-8 pr-8 py-1.5 rounded-lg border border-border bg-card text-foreground placeholder-muted-foreground text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all shadow-sm"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                   title="Clear search"
                 >
                   <X className="size-3.5" />
@@ -455,10 +455,10 @@ const ArticlesView = ({ onBack }) => {
 
             {/* Category Filter Pills */}
             {allTags.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => setSelectedTag(null)}
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer border ${
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all cursor-pointer border ${
                     !selectedTag
                       ? 'bg-foreground text-background border-foreground shadow-sm'
                       : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted'
@@ -470,13 +470,13 @@ const ArticlesView = ({ onBack }) => {
                   <button
                     key={tag}
                     onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer border ${
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all cursor-pointer border ${
                       selectedTag === tag
                         ? 'bg-foreground text-background border-foreground shadow-sm'
                         : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted'
                     }`}
                   >
-                    <Tag className="size-3" />
+                    <Tag className="size-2.5" />
                     <span>{formatTag(tag)}</span>
                   </button>
                 ))}
@@ -490,7 +490,7 @@ const ArticlesView = ({ onBack }) => {
       <section>
         {/* Loading */}
         {status === 'loading' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3.5">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <ArticleCardSkeleton key={i} />
             ))}
@@ -499,7 +499,7 @@ const ArticlesView = ({ onBack }) => {
 
         {/* Success */}
         {status === 'success' && filteredArticles.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-3.5">
             {filteredArticles.map((article, i) => (
               <ArticleCard key={article.link} article={article} index={i} />
             ))}
@@ -861,14 +861,11 @@ function App() {
 
   useEffect(() => {
     if (view === 'contact') {
-      document.body.classList.remove('py-12', 'sm:py-24', 'max-w-5xl')
-      document.body.classList.add('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden', 'max-w-2xl')
-    } else if (view === 'articles') {
-      document.body.classList.remove('max-w-2xl', 'py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
-      document.body.classList.add('max-w-5xl', 'py-10', 'sm:py-16')
+      document.body.classList.remove('py-12', 'sm:py-24')
+      document.body.classList.add('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
     } else {
-      document.body.classList.remove('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden', 'max-w-5xl')
-      document.body.classList.add('py-12', 'sm:py-24', 'max-w-2xl')
+      document.body.classList.remove('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
+      document.body.classList.add('py-12', 'sm:py-24')
     }
   }, [view])
 
