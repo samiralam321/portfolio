@@ -907,6 +907,8 @@ function App() {
       description: "Curated tech learning platform organizing the developer journey into structured tracks and high-signal resources.",
       tech: ["Next.js 14", "TypeScript", "Tailwind CSS", "Prisma", "PostgreSQL", "NextAuth.js", "Framer Motion"],
       image: "/images/zenvora_mockup.png",
+      imageFit: "object-cover object-top",
+      imageBg: "bg-[#060e24]",
       links: [
         { name: "Website", url: "https://zenvora-platform.vercel.app/", icon: <Globe className="size-3" /> },
         { name: "GitHub", url: "https://github.com/samiralam321/zenvora-platform", icon: <Github className="size-3 text-white" /> }
@@ -1258,11 +1260,11 @@ function App() {
                       <div key={idx} className="w-[280px] sm:w-[325px] flex-shrink-0 snap-start flex flex-col">
                         <BlurFade delay={0.6 + idx * 0.05} className="h-full flex flex-col">
                           <div className="rounded-xl bg-card text-card-foreground flex flex-col overflow-hidden border border-border hover:shadow-lg transition-all duration-300 ease-out h-full group">
-                            <div className="block overflow-hidden relative h-40 bg-white">
+                            <div className={`block overflow-hidden relative h-40 ${project.imageBg || 'bg-white'}`}>
                               <img 
                                 alt={project.title} 
                                 loading="lazy" 
-                                className="h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-102" 
+                                className={`h-full w-full ${project.imageFit || 'object-contain object-center'} transition-transform duration-500 group-hover:scale-105`} 
                                 src={project.image}
                               />
                             </div>
