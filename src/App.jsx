@@ -899,8 +899,19 @@ function App() {
     "Core Concepts": ["Data Structures & Algorithms", "OOP", "DBMS", "Computer Networks", "Operating Systems"]
   }
 
-  // Projects Data: Trackr & CP Master (mockups and short descriptions)
+  // Projects Data: Zenvora, Trackr, CP Master, Tempo Timer
   const projects = [
+    {
+      title: "Zenvora",
+      period: "Featured Project",
+      description: "Curated tech learning platform organizing the developer journey into structured tracks and high-signal resources.",
+      tech: ["Next.js 14", "TypeScript", "Tailwind CSS", "Prisma", "PostgreSQL", "NextAuth.js", "Framer Motion"],
+      image: "/images/zenvora_mockup.png",
+      links: [
+        { name: "Website", url: "https://zenvora-platform.vercel.app/", icon: <Globe className="size-3" /> },
+        { name: "GitHub", url: "https://github.com/samiralam321/zenvora-platform", icon: <Github className="size-3 text-white" /> }
+      ]
+    },
     {
       title: "Trackr",
       period: "Featured Project",
