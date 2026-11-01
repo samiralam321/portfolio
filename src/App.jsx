@@ -26,7 +26,7 @@ import {
   Tag
 } from 'lucide-react'
 
-// Custom inline SVG icons for Github, Linkedin, Twitter, and Spotify
+// Custom inline SVG icons for Github, Linkedin, Twitter, and YouTubeMusic
 const Github = ({ className = "size-4" }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
@@ -48,9 +48,9 @@ const Twitter = ({ className = "size-4" }) => (
   </svg>
 )
 
-const Spotify = ({ className = "size-4 text-[#1DB954]" }) => (
+const YouTubeMusic = ({ className = "size-3.5 text-[#FF0000]" }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-    <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm5.521 17.341c-.218.358-.684.471-1.042.253-2.863-1.748-6.463-2.143-10.706-1.171-.407.094-.817-.161-.911-.567-.094-.407.161-.817.567-.911 4.647-1.064 8.625-.612 11.84 1.353.358.218.471.684.252 1.043zm1.472-3.273c-.274.446-.86.587-1.306.313-3.275-2.012-8.269-2.597-12.144-1.421-.5.152-1.026-.134-1.178-.634-.152-.5.134-1.026.634-1.178 4.426-1.343 9.924-.694 13.681 1.614.446.274.587.86.313 1.306zm.127-3.413C15.176 8.35 8.784 8.136 5.107 9.252c-.613.186-1.258-.167-1.444-.78-.186-.613.167-1.258.78-1.444 4.223-1.282 11.282-1.034 15.772 1.632.552.327.734 1.037.407 1.589-.327.552-1.037.734-1.589.407z"/>
+    <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5zm0-13.5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-2 9l6-3-6-3v6z"/>
   </svg>
 )
 
@@ -603,19 +603,14 @@ function App() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState(null) // null, 'sending', 'success'
 
-  // Music Playlist: Blush (first) and Blue Sky, Don't Cry (second)
+  // YouTube Music Track: Where We're Going - Hans Zimmer (Interstellar)
   const playlist = [
     {
-      title: "Blush",
-      artist: "Prateek Kuhad",
-      cover: "/images/blush_cover.jpg",
-      audio: "https://res.cloudinary.com/dxarkutme/video/upload/v1791714019/Blush_-_Prateek_Kuhad_Lyrics_ipnpmi.m4a"
-    },
-    {
-      title: "Blue Sky, Don't Cry",
-      artist: "The Sways",
-      cover: "/images/blueskydontcry_cover.jpg",
-      audio: "https://res.cloudinary.com/dxarkutme/video/upload/v1790876397/The_Sways_-_Blue_Sky_Don_t_Cry_Official_Video_opabdg.m4a"
+      title: "Where We're Going (Slowed + Reverb)",
+      artist: "Hans Zimmer — Interstellar",
+      cover: "/images/interstellar_cover.jpg",
+      audio: "/audio/where_were_going.m4a",
+      youtubeUrl: "https://music.youtube.com/watch?v=UWOGg5nXiaI&list=RDAMVM9DMw0pa1rtM"
     }
   ]
 
@@ -640,38 +635,60 @@ function App() {
   }
 
   const switchTrack = (direction) => {
-    const newIndex = direction === 'next' 
-      ? (currentTrackIndex + 1) % playlist.length
-      : (currentTrackIndex - 1 + playlist.length) % playlist.length
-    setCurrentTrackIndex(newIndex)
-    setTimeout(() => {
-      if (audioRef.current) {
-        audioRef.current.load()
-        if (isPlayingAudio) {
-          audioRef.current.play().then(() => {
-            setIsPlayingAudio(true)
-          }).catch(err => {
-            console.error("Audio playback error:", err)
-          })
+    if (playlist.length > 1) {
+      const newIndex = direction === 'next' 
+        ? (currentTrackIndex + 1) % playlist.length
+        : (currentTrackIndex - 1 + playlist.length) % playlist.length
+      setCurrentTrackIndex(newIndex)
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.load()
+          if (isPlayingAudio) {
+            audioRef.current.play().then(() => {
+              setIsPlayingAudio(true)
+            }).catch(err => {
+              console.error("Audio playback error:", err)
+            })
+          }
         }
+      }, 50)
+    } else if (audioRef.current) {
+      // Single track: replay from start or seek
+      if (direction === 'prev') {
+        audioRef.current.currentTime = 0
+      } else {
+        audioRef.current.currentTime = Math.min(audioRef.current.duration || 0, audioRef.current.currentTime + 15)
       }
-    }, 50)
-  }
-
-  const handleAudioEnded = () => {
-    // When current track ends, advance to next track and continue playing
-    const nextIndex = (currentTrackIndex + 1) % playlist.length
-    setCurrentTrackIndex(nextIndex)
-    setTimeout(() => {
-      if (audioRef.current) {
-        audioRef.current.load()
+      if (!isPlayingAudio) {
         audioRef.current.play().then(() => {
           setIsPlayingAudio(true)
         }).catch(err => {
           console.error("Audio playback error:", err)
         })
       }
-    }, 100)
+    }
+  }
+
+  const handleAudioEnded = () => {
+    if (playlist.length > 1) {
+      const nextIndex = (currentTrackIndex + 1) % playlist.length
+      setCurrentTrackIndex(nextIndex)
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.load()
+          audioRef.current.play().then(() => {
+            setIsPlayingAudio(true)
+          }).catch(err => {
+            console.error("Audio playback error:", err)
+          })
+        }
+      }, 100)
+    } else {
+      setIsPlayingAudio(false)
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+      }
+    }
   }
 
   const projectsContainerRef = React.useRef(null)
@@ -1076,10 +1093,16 @@ function App() {
                     </div>
                     
                     <div className="flex flex-col space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                        <Spotify className="size-3.5 text-[#1DB954]" />
+                      <a 
+                        href={currentTrack.youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium hover:text-foreground transition-colors w-fit"
+                        title="Open on YouTube Music"
+                      >
+                        <YouTubeMusic className="size-3.5 text-[#FF0000]" />
                         <span>{isPlayingAudio ? 'Now playing' : 'Last played'}</span>
-                      </div>
+                      </a>
                       <h3 className="font-bold text-sm text-foreground tracking-tight leading-tight">
                         {currentTrack.title}
                       </h3>
