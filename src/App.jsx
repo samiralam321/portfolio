@@ -1093,16 +1093,10 @@ function App() {
                     </div>
                     
                     <div className="flex flex-col space-y-0.5">
-                      <a 
-                        href={currentTrack.youtubeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium hover:text-foreground transition-colors w-fit"
-                        title="Open on YouTube Music"
-                      >
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium select-none">
                         <YouTubeMusic className="size-3.5 text-[#FF0000]" />
                         <span>{isPlayingAudio ? 'Now playing' : 'Last played'}</span>
-                      </a>
+                      </div>
                       <h3 className="font-bold text-sm text-foreground tracking-tight leading-tight">
                         {currentTrack.title}
                       </h3>
