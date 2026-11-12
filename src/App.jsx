@@ -936,7 +936,8 @@ function App() {
       period: "Featured Project",
       description: "Built a distraction-free space for students who actually want to get things done.",
       tech: ["Next.js 16", "React 19", "Tailwind CSS v4", "Supabase", "Vercel"],
-      image: "/images/trackr_mockup.png",
+      image: "/images/trackr_mockup.jpg",
+      imageFit: "object-cover object-top",
       links: [
         { name: "Website", url: "https://trackr-ten-eta.vercel.app/", icon: <Globe className="size-3" /> },
         { name: "GitHub", url: "https://github.com/samiralam321/NewTrackr", icon: <Github className="size-3 text-white" /> }
