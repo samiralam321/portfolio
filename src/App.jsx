@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { TypeAnimation } from 'react-type-animation'
 import { GitHubCalendar } from 'react-github-calendar'
@@ -13,6 +14,7 @@ import {
   Briefcase,
   BookOpen,
   FileText,
+  Paperclip,
   ChevronLeft,
   ChevronRight,
   Play,
@@ -28,9 +30,8 @@ import {
 
 // Custom inline SVG icons for Github, Linkedin, Twitter, and YouTubeMusic
 const Github = ({ className = "size-4" }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-    <path d="M9 18c-4.51 2-5-2-7-2" />
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
   </svg>
 )
 
@@ -48,6 +49,20 @@ const Twitter = ({ className = "size-4" }) => (
   </svg>
 )
 
+const YouTube = ({ className = "size-4" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+  </svg>
+)
+
+const Instagram = ({ className = "size-4" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+  </svg>
+)
+
 const YouTubeMusic = ({ className = "size-3.5 text-[#FF0000]" }) => (
   <svg viewBox="0 0 24 24" className={className} fill="currentColor">
     <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.5c-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5zm0-13.5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-2 9l6-3-6-3v6z"/>
@@ -60,6 +75,22 @@ const MediumIcon = ({ className = "size-4" }) => (
     <path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/>
   </svg>
 )
+
+// Minimal Editorial Tooltip Component matching reference design
+const Tooltip = ({ children, content }) => {
+  return (
+    <div className="relative group/tooltip flex items-center justify-center">
+      {children}
+      <div 
+        role="tooltip"
+        className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded bg-[#111111] dark:bg-[#222222] border border-neutral-800 text-white text-[11px] font-medium whitespace-nowrap opacity-0 translate-y-1 group-hover/tooltip:opacity-100 group-hover/tooltip:translate-y-0 group-focus-within/tooltip:opacity-100 group-focus-within/tooltip:translate-y-0 transition-all duration-150 ease-out z-50 shadow-md"
+      >
+        {content}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-[#111111] dark:border-t-[#222222]" />
+      </div>
+    </div>
+  )
+}
 
 // Reusable BlurFade animation component mimicking Magic UI
 const BlurFade = ({ children, delay = 0, duration = 0.4, className = "" }) => {
@@ -695,53 +726,7 @@ function App() {
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
 
-  const calendarScrollRef = React.useRef(null)
 
-  const scrollToCalendarRight = () => {
-    if (calendarScrollRef.current) {
-      calendarScrollRef.current.scrollLeft = 0
-    }
-  }
-
-  useEffect(() => {
-    const container = calendarScrollRef.current
-    if (!container) return
-
-    scrollToCalendarRight()
-
-    const mutationObserver = new MutationObserver(() => {
-      scrollToCalendarRight()
-    })
-    mutationObserver.observe(container, { childList: true, subtree: true, attributes: true })
-
-    let resizeObserver
-    if (window.ResizeObserver) {
-      resizeObserver = new ResizeObserver(() => {
-        scrollToCalendarRight()
-      })
-      resizeObserver.observe(container)
-      const svg = container.querySelector('svg')
-      if (svg) resizeObserver.observe(svg)
-    }
-
-    window.addEventListener('resize', scrollToCalendarRight)
-    const t0 = setTimeout(scrollToCalendarRight, 50)
-    const t1 = setTimeout(scrollToCalendarRight, 200)
-    const t2 = setTimeout(scrollToCalendarRight, 600)
-    const t3 = setTimeout(scrollToCalendarRight, 1200)
-    const t4 = setTimeout(scrollToCalendarRight, 2500)
-
-    return () => {
-      mutationObserver.disconnect()
-      if (resizeObserver) resizeObserver.disconnect()
-      window.removeEventListener('resize', scrollToCalendarRight)
-      clearTimeout(t0)
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
-      clearTimeout(t4)
-    }
-  }, [view])
 
   const checkScrollButtons = () => {
     if (projectsContainerRef.current) {
@@ -841,27 +826,37 @@ function App() {
   const contactLinks = [
     {
       name: "GitHub",
-      icon: <Github className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      icon: <Github className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />,
       url: "https://github.com/samiralam321"
     },
     {
       name: "Linkedin",
-      icon: <Linkedin className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      icon: <Linkedin className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />,
       url: "https://www.linkedin.com/in/samir-alam-595b74328/"
     },
     {
       name: "X (Twitter)",
-      icon: <Twitter className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      icon: <Twitter className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />,
       url: "https://x.com/SamAlCse"
     },
     {
+      name: "YouTube",
+      icon: <YouTube className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      url: "https://www.youtube.com/@itssamirx"
+    },
+    {
+      name: "Instagram",
+      icon: <Instagram className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      url: "https://www.instagram.com/btechcse_forum?rpxt=MTU2MWoydGlpcHlvZg=="
+    },
+    {
       name: "Resume",
-      icon: <FileText className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      icon: <FileText className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />,
       url: "/resume.pdf"
     },
     {
       name: "Email",
-      icon: <Mail className="size-5 text-muted-foreground transition-colors group-hover:text-foreground" />,
+      icon: <Mail className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />,
       url: "mailto:sa8103339@gmail.com"
     }
   ]
@@ -878,12 +873,19 @@ function App() {
 
   useEffect(() => {
     if (view === 'contact') {
-      document.body.classList.remove('py-12', 'sm:py-24')
-      document.body.classList.add('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
+      document.body.classList.add('h-dvh', 'overflow-hidden')
     } else {
-      document.body.classList.remove('py-2', 'sm:py-4', 'h-dvh', 'overflow-hidden')
-      document.body.classList.add('py-12', 'sm:py-24')
+      document.body.classList.remove('h-dvh', 'overflow-hidden')
     }
+  }, [view])
+
+  // Ensure clean body padding/margins on mount and view switch
+  useEffect(() => {
+    document.body.style.margin = '0px'
+    document.body.style.padding = '0px'
+    document.documentElement.style.margin = '0px'
+    document.documentElement.style.padding = '0px'
+    document.body.classList.remove('py-12', 'sm:py-24', 'px-6', 'max-w-2xl', 'mx-auto')
   }, [view])
 
   // Update document title for articles page
@@ -895,9 +897,61 @@ function App() {
     }
   }, [view])
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
+  const handleThemeToggle = (e) => {
+    const newMode = !darkMode
+
+    if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDarkMode(newMode)
+      if (newMode) {
+        document.documentElement.classList.add('dark')
+        localStorage.setItem('theme', 'dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+        localStorage.setItem('theme', 'light')
+      }
+      return
+    }
+
+    const rect = e?.currentTarget?.getBoundingClientRect()
+    const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+    const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    )
+
+    const transition = document.startViewTransition(() => {
+      flushSync(() => {
+        setDarkMode(newMode)
+        if (newMode) {
+          document.documentElement.classList.add('dark')
+          localStorage.setItem('theme', 'dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+          localStorage.setItem('theme', 'light')
+        }
+      })
+    })
+
+    transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`
+          ]
+        },
+        {
+          duration: 750,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          pseudoElement: '::view-transition-new(root)'
+        }
+      )
+    })
   }
+
+  const toggleDarkMode = handleThemeToggle
 
   // Smooth scroll handler
   const scrollToSection = (id) => {
@@ -928,7 +982,7 @@ function App() {
       imageBg: "bg-[#060e24]",
       links: [
         { name: "Website", url: "https://zenvora-platform.vercel.app/", icon: <Globe className="size-3" /> },
-        { name: "GitHub", url: "https://github.com/samiralam321/zenvora-platform", icon: <Github className="size-3 text-white" /> }
+        { name: "GitHub", url: "https://github.com/samiralam321/zenvora-platform", icon: <Github className="size-3" /> }
       ]
     },
     {
@@ -940,7 +994,7 @@ function App() {
       imageFit: "object-cover object-top",
       links: [
         { name: "Website", url: "https://trackr-ten-eta.vercel.app/", icon: <Globe className="size-3" /> },
-        { name: "GitHub", url: "https://github.com/samiralam321/NewTrackr", icon: <Github className="size-3 text-white" /> }
+        { name: "GitHub", url: "https://github.com/samiralam321/NewTrackr", icon: <Github className="size-3" /> }
       ]
     },
     {
@@ -951,7 +1005,7 @@ function App() {
       image: "/images/cpmaster_mockup.png",
       links: [
         { name: "Website", url: "https://cpmaster.netlify.app/", icon: <Globe className="size-3" /> },
-        { name: "GitHub", url: "https://github.com/samiralam321", icon: <Github className="size-3 text-white" /> }
+        { name: "GitHub", url: "https://github.com/samiralam321", icon: <Github className="size-3" /> }
       ]
     },
     {
@@ -962,7 +1016,7 @@ function App() {
       image: "/images/tempotimer_mockup.jpg",
       links: [
         { name: "Website", url: "https://tempo-timer-five.vercel.app/", icon: <Globe className="size-3" /> },
-        { name: "GitHub", url: "https://github.com/samiralam321/tempo-timer", icon: <Github className="size-3 text-white" /> }
+        { name: "GitHub", url: "https://github.com/samiralam321/tempo-timer", icon: <Github className="size-3" /> }
       ]
     }
   ]
@@ -1004,592 +1058,598 @@ function App() {
   ]
 
   return (
-    <main className="flex flex-col min-h-[100dvh]">
+    <main className="min-h-screen m-0 p-0 selection:bg-neutral-900 selection:text-white dark:selection:bg-white dark:selection:text-black">
       <AnimatePresence mode="wait">
         {view === 'home' ? (
           <motion.div
             key="home"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="flex flex-col space-y-10 pb-20"
+            className="relative mx-auto max-w-4xl min-h-screen m-0 p-0"
           >
-            {/* Hero Section */}
-            <section id="hero">
-              <div className="mx-auto w-full max-w-2xl">
-                <div className="gap-2 flex justify-between items-start">
-                  <div className="flex-col flex flex-1 space-y-1.5 pt-2">
-                    <BlurFade delay={0.05}>
-                      <h1 className="inline-block text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                        Hi, I'm Samir
-                      </h1>
-                    </BlurFade>
-                    
-                    <BlurFade delay={0.1}>
-                      <div className="h-[28px] flex items-center">
-                        <TypeAnimation
-                          sequence={[
-                            'Backend Developer', 2000,
-                            'AI & GenAI Learner', 2000,
-                            'Competitive Programmer', 2000,
-                            'Lifetime Learner', 2000,
-                          ]}
-                          wrapper="span"
-                          speed={50}
-                          repeat={Infinity}
-                          className="text-lg md:text-xl font-medium text-muted-foreground"
-                        />
-                      </div>
-                    </BlurFade>
-                  </div>
-                  
-                  <BlurFade delay={0.1}>
-                    <div className="relative flex shrink-0 overflow-hidden rounded-full size-28 border border-border bg-card">
-                      <img 
-                        className="aspect-square h-full w-full object-cover" 
-                        alt="Samir Alam" 
-                        src="/profile.png" 
-                      />
-                    </div>
-                  </BlurFade>
-                </div>
-              </div>
-            </section>
+            {/* Left diagonal striped pattern column (hidden on mobile, visible on sm+) */}
+            <div className="absolute left-0 w-[60px] h-full overflow-hidden sm:block hidden pointer-events-none" style={{ top: 0 }}>
+              <div className="absolute inset-0 w-[60px] h-full border-r border-neutral-200/80 dark:border-[#292929] diagonal-stripes text-black dark:text-[#eee] opacity-[0.07] dark:opacity-[0.06]"></div>
+            </div>
 
-            {/* About Section */}
-            <section id="about">
-              <div className="space-y-3">
-                <BlurFade delay={0.15}>
-                  <h2 className="text-xl font-bold">About</h2>
-                </BlurFade>
-                
-                <BlurFade delay={0.2}>
-                  <div className="prose max-w-full text-pretty font-sans text-sm text-muted-foreground dark:prose-invert leading-relaxed">
-                    <p>
-                      I'm a B.Tech CSE student who loves building web applications, learning new technologies, and exploring AI-powered products. Currently, I'm focused on Backend Development and work with React, Node.js, JavaScript, Python, C++, and Go. Outside of coding, I create content for a community of 15k+ followers, where I share my thoughts, experiences, and insights to help fellow B.Tech students in their tech journey. I enjoy learning, solving problems, and building things that can make a real difference.
+            {/* Right diagonal striped pattern column (hidden on mobile, visible on sm+) */}
+            <div className="absolute right-0 w-[60px] h-full overflow-hidden sm:block hidden pointer-events-none" style={{ top: 0 }}>
+              <div className="absolute inset-0 w-[60px] h-full border-l border-neutral-200/80 dark:border-[#292929] diagonal-stripes text-black dark:text-[#eee] opacity-[0.07] dark:opacity-[0.06]"></div>
+            </div>
+
+            {/* Center Main Profile Container */}
+            <div className="mx-auto sm:w-[calc(100%-120px)] w-full min-h-screen bg-white dark:bg-[#171717] border-x border-neutral-200/80 dark:border-[#292929] shadow-xs pb-16 m-0 p-0">
+              
+              {/* Cover Banner Section */}
+              <div className="w-full relative m-0 p-0">
+                <div className="relative w-full h-[180px] sm:h-[280px] overflow-hidden bg-neutral-900">
+                  <img 
+                    src="/images/blue-ridge-main.webp" 
+                    alt="Blue Ridge Mountains" 
+                    className="w-full h-full object-cover select-none"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center px-4 bg-black/25 pointer-events-none">
+                    <p className="text-white text-base sm:text-xl italic font-instrument text-center select-none tracking-wide drop-shadow-md">
+                      Build what you wish existed.
                     </p>
                   </div>
-                </BlurFade>
+                </div>
               </div>
-            </section>
 
-            {/* Music / Audio Player Widget Section */}
-            <section id="music">
-              <BlurFade delay={0.22}>
+              {/* Profile Information Section */}
+              <div className="flex-col -mt-10 sm:-mt-12">
+                {/* Circular Profile Avatar */}
+                <div className="flex items-center justify-between mb-4 sm:ml-8 ml-4 sm:mr-8 mr-4">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 relative z-10 rounded-full overflow-hidden border-4 border-white dark:border-[#171717] shadow-sm bg-neutral-100 dark:bg-neutral-800 shrink-0">
+                    <img 
+                      src="/profile.png" 
+                      alt="Samir" 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                </div>
+
+                {/* Profile Name, Role & Social Icons */}
+                <div className="text-left sm:flex sm:justify-between sm:items-center w-full sm:px-8 px-4 flex-col sm:flex-row gap-3">
+                  <div className="px-0">
+                    <h1 className="font-instrument italic text-3xl sm:text-4xl tracking-[0.01em] font-medium mb-0.5 text-neutral-900 dark:text-[#F2F2F2]">
+                      Samir
+                    </h1>
+                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-[#A3A3A3] flex items-center gap-1.5">
+                      <span>20</span>
+                      <span>•</span>
+                      <TypeAnimation
+                        sequence={[
+                          'Backend Developer', 2000,
+                          'Competitive Programmer', 2000,
+                          'AI & GenAI Learner', 2000,
+                          'Lifetime Learner', 2000,
+                        ]}
+                        wrapper="span"
+                        speed={50}
+                        repeat={Infinity}
+                        className="font-normal"
+                      />
+                    </p>
+                  </div>
+
+                  {/* Social Media Action Buttons with Tooltips */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 mt-3 sm:mt-0">
+                    <Tooltip content="GitHub">
+                      <a 
+                        href="https://github.com/samiralam321" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        aria-label="GitHub"
+                        className="size-8 rounded-full border border-neutral-200/80 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-600 dark:text-[#B5B5B5] hover:text-black dark:hover:text-white hover:border-neutral-300 dark:hover:border-neutral-700 flex items-center justify-center transition-all duration-150 shadow-xs active:scale-95"
+                      >
+                        <Github className="size-3.5" />
+                      </a>
+                    </Tooltip>
+
+                    <Tooltip content="X / Twitter">
+                      <a 
+                        href="https://x.com/SamAlCse" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        aria-label="X / Twitter"
+                        className="size-8 rounded-full border border-neutral-200/80 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-600 dark:text-[#B5B5B5] hover:text-black dark:hover:text-white hover:border-neutral-300 dark:hover:border-neutral-700 flex items-center justify-center transition-all duration-150 shadow-xs active:scale-95"
+                      >
+                        <Twitter className="size-3.5" />
+                      </a>
+                    </Tooltip>
+
+                    <Tooltip content="View Resume">
+                      <a 
+                        href="/resume.pdf" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        aria-label="View Resume"
+                        className="size-8 rounded-full border border-neutral-200/80 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-600 dark:text-[#B5B5B5] hover:text-black dark:hover:text-white hover:border-neutral-300 dark:hover:border-neutral-700 flex items-center justify-center transition-all duration-150 shadow-xs active:scale-95"
+                      >
+                        <Paperclip className="size-3.5" />
+                      </a>
+                    </Tooltip>
+
+                    <Tooltip content="LinkedIn">
+                      <a 
+                        href="https://www.linkedin.com/in/samir-alam-595b74328/" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        aria-label="LinkedIn"
+                        className="size-8 rounded-full border border-neutral-200/80 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-600 dark:text-[#B5B5B5] hover:text-black dark:hover:text-white hover:border-neutral-300 dark:hover:border-neutral-700 flex items-center justify-center transition-all duration-150 shadow-xs active:scale-95"
+                      >
+                        <Linkedin className="size-3.5" />
+                      </a>
+                    </Tooltip>
+
+                    <Tooltip content="Medium Articles">
+                      <button 
+                        onClick={() => handleNav('articles')}
+                        aria-label="Medium Articles"
+                        type="button"
+                        className="size-8 rounded-full border border-neutral-200/80 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-600 dark:text-[#B5B5B5] hover:text-black dark:hover:text-white hover:border-neutral-300 dark:hover:border-neutral-700 flex items-center justify-center transition-all duration-150 shadow-xs active:scale-95 cursor-pointer"
+                      >
+                        <BookOpen className="size-3.5" />
+                      </button>
+                    </Tooltip>
+
+                    <Tooltip content={darkMode ? "Switch to light theme" : "Switch to dark theme"}>
+                      <button 
+                        onClick={handleThemeToggle}
+                        aria-label={darkMode ? "Switch to light theme" : "Switch to dark theme"}
+                        type="button"
+                        className="size-8 rounded-full border border-neutral-200/80 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-600 dark:text-[#B5B5B5] hover:text-black dark:hover:text-white hover:border-neutral-300 dark:hover:border-neutral-700 flex items-center justify-center transition-all duration-150 shadow-xs active:scale-95 cursor-pointer"
+                      >
+                        {darkMode ? <Sun className="size-3.5 text-yellow-500" /> : <Moon className="size-3.5 text-neutral-700" />}
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thin horizontal divider */}
+              <div className="border-b border-neutral-200/80 dark:border-[#292929] my-6 sm:my-8 mx-4 sm:mx-8"></div>
+
+              {/* About Section */}
+              <section id="about" className="sm:px-8 px-4">
+                <div className="space-y-4">
+                  <p className="text-sm sm:text-base text-neutral-700 dark:text-[#A3A3A3] leading-[1.75] text-pretty">
+                    <span className="font-semibold text-neutral-900 dark:text-[#F2F2F2]">I build from zero.</span> I'm a B.Tech CSE student focused on Backend Development, building scalable web applications with React, Node.js, Express, Python, C++, and Go. Outside of coding, I create content for a community of 15k+ followers, sharing insights and helping fellow developers in their tech journey. I enjoy solving challenging problems, optimizing performance, and crafting clean, reliable systems that make a real difference.
+                  </p>
+                </div>
+              </section>
+
+              {/* Music / Currently Playing Section */}
+              <section id="music" className="sm:px-8 px-4 mt-6 sm:mt-8">
                 <audio 
                   ref={audioRef} 
                   src={currentTrack.audio} 
                   onEnded={handleAudioEnded}
                   preload="metadata"
                 />
-                <div className="rounded-2xl border border-border/80 bg-card p-3.5 px-4 shadow-sm hover:shadow-md transition-all duration-300 max-w-2xl mx-auto flex items-center justify-between group">
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative size-12 rounded-xl overflow-hidden flex-shrink-0 border border-border/50 shadow-sm bg-white">
-                      <img 
-                        src={currentTrack.cover} 
-                        alt={`${currentTrack.title} Album Cover`} 
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                    
-                    <div className="flex flex-col space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium select-none">
-                        <YouTubeMusic className="size-3.5 text-[#FF0000]" />
-                        <span>{isPlayingAudio ? 'Now playing' : 'Last played'}</span>
-                      </div>
-                      <h3 className="font-bold text-sm text-foreground tracking-tight leading-tight">
-                        {currentTrack.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        {currentTrack.artist}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-                    <button
-                      onClick={() => switchTrack('prev')}
-                      type="button"
-                      className="size-8 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all text-muted-foreground hover:text-foreground cursor-pointer"
-                      title="Previous track"
-                    >
-                      <SkipBack className="size-3.5 fill-current" />
-                    </button>
-
-                    <button
-                      onClick={togglePlayAudio}
-                      type="button"
-                      className="size-9 rounded-full bg-background border border-border/70 shadow-sm flex items-center justify-center hover:bg-muted hover:scale-105 active:scale-95 transition-all text-foreground group-hover:border-foreground/30 cursor-pointer"
-                      title={isPlayingAudio ? "Pause" : "Play"}
-                    >
-                      {isPlayingAudio ? (
-                        <Pause className="size-4 fill-current ml-0" />
-                      ) : (
-                        <Play className="size-4 fill-current ml-0.5" />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => switchTrack('next')}
-                      type="button"
-                      className="size-8 rounded-full flex items-center justify-center hover:bg-muted active:scale-95 transition-all text-muted-foreground hover:text-foreground cursor-pointer"
-                      title="Next track"
-                    >
-                      <SkipForward className="size-3.5 fill-current" />
-                    </button>
-                  </div>
-                </div>
-              </BlurFade>
-            </section>
-
-            {/* Coding Profiles Section */}
-            <section id="profiles">
-              <div className="space-y-3">
-                <BlurFade delay={0.25}>
-                  <h2 className="text-xl font-bold">Coding Profiles</h2>
-                </BlurFade>
-                
-                <BlurFade delay={0.3}>
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <a 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="flex items-center justify-center rounded-lg p-2 hover:bg-muted text-foreground transition-colors duration-200" 
-                      href="https://leetcode.com/u/samCPer/"
-                      title="LeetCode"
-                    >
-                      <svg stroke="currentColor" fill="currentColor" strokeWidth="0" role="img" viewBox="0 0 24 24" className="h-5 w-5 text-[#FFA116]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"></path>
-                      </svg>
-                    </a>
-                    
-                    <a 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="flex items-center justify-center rounded-lg p-2 hover:bg-muted text-foreground transition-colors duration-200" 
-                      href="https://codeforces.com/profile/SamCodez"
-                      title="Codeforces"
-                    >
-                      <svg stroke="currentColor" fill="currentColor" strokeWidth="0" role="img" viewBox="0 0 24 24" className="h-5 w-5 text-[#318DFF]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4.5 7.5C5.328 7.5 6 8.172 6 9v10.5c0 .828-.672 1.5-1.5 1.5h-3C.673 21 0 20.328 0 19.5V9c0-.828.673-1.5 1.5-1.5h-3zm9-4.5c.828 0 1.5.672 1.5 1.5v15c0 .828-.672 1.5-1.5 1.5h-3c-.827 0-1.5-.672-1.5-1.5v-15c0-.828.673-1.5 1.5-1.5h3zm9 7.5c.828 0 1.5.672 1.5 1.5v7.5c0 .828-.672 1.5-1.5 1.5h-3c-.828 0-1.5-.672-1.5-1.5V12c0-.828.672-1.5 1.5-1.5h3z"></path>
-                      </svg>
-                    </a>
-
-                    <a 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="flex items-center justify-center rounded-lg p-2 hover:bg-muted text-foreground transition-colors duration-200" 
-                      href="https://www.codechef.com/users/samir_codez"
-                      title="CodeChef"
-                    >
-                      <svg stroke="currentColor" fill="currentColor" strokeWidth="0" role="img" viewBox="0 0 24 24" className="h-5 w-5 text-[#5B4638]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11.2574.0039c-.37.0101-.7353.041-1.1003.095C9.6164.153 9.0766.4236 8.482.694c-.757.3244-1.5147.6486-2.2176.7027-1.1896.3785-1.568.919-1.8925 1.3516 0 .054-.054.1079-.054.1079-.4325.865-.4873 1.73-.325 2.5952.1621.5407.3786 1.0282.5408 1.5148.3785 1.0274.7578 2.0007.92 3.1362.1622.3244.3235.7571.4316 1.1897.2704.8651.542 1.8383 1.353 2.5952l.0057-.0028c.0175.0183.0301.0387.0482.0568.0072-.0036.0141-.0063.0213-.0099l-.0213-.5849c.6489-.9733 1.5673-1.6221 2.865-1.8925.5195-.1093 1.081-.1497 1.6625-.1278a8.7733 8.7733 0 0 1 1.7988.2357c1.4599.3785 2.595 1.1358 2.6492 1.7846.0273.3549.0398.6952.0326 1.0364-.001.064-.0046.1285-.007.193l.1362.0682c.075-.0375.1424-.107.2059-.1902.0008-.001.002-.002.0028-.0028.0018-.0023.0039-.0061.0057-.0085.0396-.0536.0747-.1236.1107-.1931.0188-.0377.0372-.0866.0554-.1292.2048-.4622.362-1.1536.538-1.9635.0541-.2703.1092-.4864.1633-.7027.4326-.9733 1.0266-1.8382 1.6213-2.6492.9733-1.3518 1.8928-2.5962 1.7846-4.0561-1.784-3.4608-4.2718-4.0017-5.5695-4.272-.2163-.0541-.3233-.0539-.4856-.108-1.3382-.2433-2.4945-.3953-3.6046-.3648zm5.0428 14.3788a9.8602 9.8602 0 0 0-.0326-.9824c-.0541-.703-1.1892-1.46-2.7032-1.8386-.588-.1336-1.1764-.2142-1.7448-.2356-.539-.0137-1.0657.0248-1.5546.1277-1.2436.2704-2.2162.9193-2.811 1.8925l.0511 1.431c.6672-.3558 1.7326-.8747 3.139-.9994.0662-.0059.1368-.0059.2044-.0099.1177-.013.2667-.044.4444-.044 1.6075 0 3.2682.5336 4.8767 1.6483.039-.2744.0611-.549.071-.8234l.044.0227c.0028-.0622.0143-.1268.0156-.1888zM11.256.0578c.1239-.0034.2538.01.379.0114-.23-.0022-.4588.0026-.6871.0156.103-.0061.2046-.0242.308-.027zm.4983.0156c.6552.014 1.3255.0711 2.0387.1803-.6834-.0987-1.3646-.1671-2.0387-.1803zm-1.3147.0554c-.076.0087-.1527.0133-.2285.0241-.8168.1167-1.7742.7015-2.75 1.045.3545-.1323.7143-.2957 1.0747-.4501C9.0765.4774 9.6705.207 10.1571.1529c.0939-.0139.1886-.0133.2825-.0241zm-.2285.24c.1622 0 .3787-.0002.5409.0539-.1425-.0357-.2595-.026-.3706-.0142a1.174 1.174 0 0 1 .3166.0681c.5796 1.0012-.4264 5.2791-.6786 8.1492.1559 1.0276.3138 1.9963.4628 2.7201-.7029-1.7843-1.4067-4.921-1.5148-7.354-.054-.9733.001-1.8386.2172-2.4874C9.401.8557 9.7244.4228 10.2111.3687zm3.1361.271c-.811 2.1088-.9184 6.1092-.9725 7.3528-.054.5407-.0001 1.73.054 2.5952 0 .2163.054.4325.054.6488 0-.2163-.054-.3786-.054-.5948-.4326-3.2442-.974-7.1362.9185-10.002zm3.352.3777c-.2704 2.1628-1.4047 3.191-1.7832 5.2998-.1081 1.6762-.325 3.6222-.379 5.2984-.0541-1.6762-.0007-3.4601.2697-5.2444.2703-1.8384.8651-3.6776 1.8925-5.3538zm-10.381.433c-.3581.1194-.632.248-.8575.3805.2317-.1358.4996-.2666.8575-.3805zm.2101.1974c.2155.0025.4384.0734.6006.2357-.0067-.004-.0078-.0033-.0142-.0071.1331.0929.2666.2093.3932.3847-.2036.9673.2553 3.0317.0398 4.6694.0763 1.5485.0717 3.1804.849 4.4594-.9796-1.5107-1.3218-5.236-.1128-1.0907-.2035-2.0969-.4642-2.9033-.144-.3047-.2684-.5745-.3833-.822-.0247-.0369-.0447-.0784-.071-.1135-.1082-.1082-.1619-.2696-.1619-.3777 0-.054.0539-.1618.108-.1618.054-.0541.1616-.0553.2157-.1094a1.013 1.013 0 0 1 .2101-.0184zm-1.3459.6133c-.0604.0201-.0923.041-.1405.061.1768-.034.3617.0339.5196.318-.1877.8916.4364 3.3685.4288 5.104.3124 1.8478.5496 3.8498 1.5716 5.1152C6.3723 11.5076 5.886 9.1286 5.5076 7.128 5.183 5.56 4.9125 4.2086 4.3718 3.776c-.054-.1081-.1079-.163-.1079-.2711 0-.1622-.0002-.3786.1079-.5949-.2772.6337-.4047 1.2673-.3706 1.901-.0445-.6487.0857-1.2905.3706-1.901 0-.054.054-.0538.054-.1079.012-.016.0314-.0349.044-.0511.0618-.0983.1308-.189.2257-.257.0557-.0615.0965-.1191.159-.1817-.0526.0555-.0872.1092-.1335.1647.0273-.018.0523-.0368.0838-.0525.1081-.1082.2154-.1633.3776-.1633zm-.3776.1633c-.0038.0075-.0076.0111-.0114.0184.0125-.0099.0242-.0208.037-.0298-.0074.0037-.0182.0077-.0256.0114zm14.7608 1.1343c-.0017.0052-.004.0104-.0057.0156.0378-.005.0751-.0173.1135-.0156-.0378-.0022-.0763.0103-.115.0199-.8634 2.6418-1.8874 5.2844-2.9118 7.9262a.0184.0184 0 0 1-.0015.0028c-.0874.4652-.234.8842-.5395 1.1898.4326-.4867.4854-1.1907.5395-2.0558.054-.811.0544-1.6761.487-2.5413 0-.0531.0012-.1058.0525-.159.0003-.0009.0012-.0019.0015-.0028.0973-.3524.202-.6885.3166-1.018.4183-1.2896 1.1396-3.1653 2.0131-3.3405.0163-.0052.034-.018.0497-.0213zM8.3726 16.2113l-.3238.1079c.1623.2163.2696.379.3777.433.1081.054.2168.108.379.108.0541 0 .1618 0 .2159-.054l.812-.2698c.0541 0 .1078-.054.1619-.054.1081 0 .1616 0 .2697.054l.2712.2698.2697-.054c-.1081-.1622-.2695-.3236-.3776-.3776-.1082-.0541-.2169-.1094-.379-.1094h-.108l-.866.3252h-.1618c-.1082 0-.2157 0-.2698-.054-.054-.054-.163-.1629-.2712-.3251zm-2.5953.541c-.2703.1621-.649.4324-1.1897.6487-.5407.2163-.9734.4325-1.1897.6488-.2163.2163-.3237.4326-.3237.6488 0 .1082.0537.1632.1618.2172.054.0541.1632.0539.2172.108.757.3244 1.5133.7019 2.2162 1.0803.1082.0541.2171.1632.2712.2173.054.054.1078.054.1618.054.1082 0 .2695-.0538.3777-.162.1081-.108.1632-.217.1632-.325 0-.1082-.055-.1618-.1632-.2158 0 0-.4328-.2165-1.1898-.541-.4866-.2162-.9179-.4326-1.1883-.5948.1623-.2704.486-.4865.9726-.7028.5407-.2163.9196-.4326 1.0818-.5948.054-.0541.054-.1078.054-.1619 0-.054-.0539-.1631-.108-.2172-.054-.054-.163-.1079-.2711-.1079zm11.247 0c-.054 0-.1618.0537-.2158.1078-.0541.1081-.1093.1632-.1093.2172v.054c.1622.1622.3797.2695.7041.3776.2704.054.5403.1632.8107.2172.3244.1082.5407.2693.6488.4856v.0553c0 .0541-.1088.1616-.3251.2698-.1082.054-.3245.2167-.5949.433-.2703.1622-.4326.3236-.5948.3776-.2163.1082-.3776.217-.4316.3252-.0541.054-.054.1077-.054.1618 0 .1081.0539.1077.108.2158.054.1081.1616.1093.2157.1093.054 0 .1078-.0554.1619-.0554.2703-.1622.6492-.3782 1.0818-.7567.4866-.3784.8655-.6484 1.0818-.8106.2163-.1082.3237-.2169.3237-.379 0-.0541.0002-.1618-.1079-.2159-.3785-.4325-.9185-.7022-1.5674-.9185-.1081-.0541-.2704-.1092-.5948-.1633-.1622-.054-.3249-.1079-.433-.1079zm-2.9743.8106c-.2704 0-.4866.055-.6488.2172-.2163.1622-.2699.4323-.2158.7567 0 .2703.1075.4865.2697.7027.1622.2163.3786.3252.5949.3252.1622 0 .2708-.0553.433-.1094.2703-.1622.379-.4319.379-.9185 0-.3785-.109-.6485-.2711-.8107-.1622-.1081-.3246-.1632-.541-.1632zm-4.4877.054c-.2704 0-.4866.055-.6488.2171-.2163.1622-.27.4323-.2158.7567 0 .2704.1075.4865.2697.7028s.3786.3251.5949.3251c.1622 0 .2708-.0552.433-.1093.2703-.1622.3776-.432.3776-.9186 0-.4325-.1075-.7025-.2697-.8106-.1622-.1082-.3247-.1633-.541-.1633zm0 .6501c.1622 0 .2711.1076.2711.2698 0 .1622-.163.2697-.2711.2697-.1622 0-.2698-.1075-.2698-.2697s.1076-.2698.2698-.2698zm4.3798.054c.1622 0 .2711.1075.2711.2697 0 .1082-.109.2698-.2711.2698-.1622 0-.2698-.1076-.2698-.2698 0-.1622.1076-.2697.2698-.2697zm-2.7032 2.1083l.1619.3237c.054.1081.1076.163.2158.2711.054.054.163.1619.2712.1619h.1078c.1082 0 .1618 0 .2158-.054.0541-.054.1632-.0538.2173-.1079l.1618-.1618c.054-.054.108-.1092.108-.1633.054-.054.0537-.1078.1078-.1618 0-.0541.054-.108.054-.108-.0541.1082-.1618.2156-.2158.3238-.1082.054-.1616.1632-.2698.1632-.1081.0541-.217.054-.3251.054s-.2157.0001-.2697-.054c-.1082 0-.1632-.0538-.2173-.1079l-.1618-.1632c-.054-.0541-.1078-.1618-.1619-.2158zm-.866 1.0278c-1.1355 0-1.8377 1.5136-3.4598.1619-.4326 2.6494 2.7583 2.866 4.11 1.7306.9192-.811.6475-1.9465-.6502-1.8925zm2.8664 0c-1.2977-.054-1.568 1.0815-.6488 1.8925 1.3518 1.1355 4.5412.9188 4.1087-1.7306-1.6221 1.3517-2.2703-.1619-3.4599-.1619z"></path>
-                      </svg>
-                    </a>
-                  </div>
-                </BlurFade>
-              </div>
-            </section>
-
-            {/* Experience Section */}
-            <section id="experience">
-              <div className="space-y-3">
-                <BlurFade delay={0.35}>
-                  <h2 className="text-xl font-bold">Experience</h2>
-                </BlurFade>
-                
-                <div className="space-y-4">
-                  {experiences.map((exp, idx) => (
-                    <BlurFade key={idx} delay={0.4 + idx * 0.05}>
-                      <div className="flex flex-col space-y-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm">
-                          <h3 className="font-semibold text-foreground flex items-center gap-1.5">
-                            <Briefcase className="size-3.5 text-muted-foreground" />
-                            {exp.role} <span className="text-xs text-muted-foreground font-normal">({exp.company})</span>
-                          </h3>
-                          <span className="text-xs text-muted-foreground sm:text-right font-medium">{exp.period}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground font-medium pb-1">{exp.type}</div>
-                        <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1 pl-1 leading-relaxed">
-                          {exp.bullets.map((bullet, bIdx) => (
-                            <li key={bIdx}>{bullet}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </BlurFade>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* Projects Section */}
-            <section id="projects" className="scroll-mt-12">
-              <div className="w-full space-y-6">
-                <div className="flex flex-col items-center justify-center space-y-3 text-center">
-                  <BlurFade delay={0.45}>
-                    <div className="inline-block rounded-lg bg-foreground text-background px-3 py-1 text-xs font-medium">
-                      My Work
-                    </div>
-                  </BlurFade>
-                  <BlurFade delay={0.5}>
-                    <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                      Check out my Projects
-                    </h2>
-                  </BlurFade>
-                  <BlurFade delay={0.55}>
-                    <p className="text-muted-foreground max-w-[600px] text-sm md:text-base leading-relaxed">
-                      I've built a range of frontend, backend, and full-stack applications that focus on clean design, functionality, and performance. Here are some of my favorite projects.
-                    </p>
-                  </BlurFade>
-                </div>
-
-                {/* Projects Carousel Container */}
-                <div className="relative max-w-[800px] mx-auto group/carousel px-2 sm:px-0">
-                  {/* Left Scroll Button */}
-                  {canScrollLeft && (
-                    <button
-                      onClick={() => scrollProjects('left')}
-                      className="absolute -left-2 sm:-left-5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground border border-border shadow-lg backdrop-blur hover:bg-muted hover:scale-110 transition-all duration-200"
-                      aria-label="Scroll Left"
-                    >
-                      <ChevronLeft className="size-5" />
-                    </button>
-                  )}
-
-                  {/* Right Scroll Button */}
-                  {canScrollRight && (
-                    <button
-                      onClick={() => scrollProjects('right')}
-                      className="absolute -right-2 sm:-right-5 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground border border-border shadow-lg backdrop-blur hover:bg-muted hover:scale-110 transition-all duration-200 animate-pulse hover:animate-none"
-                      aria-label="Scroll Right"
-                    >
-                      <ChevronRight className="size-5" />
-                    </button>
-                  )}
-
-                  {/* Scrollable Cards Container */}
-                  <div 
-                    ref={projectsContainerRef}
-                    onScroll={checkScrollButtons}
-                    className="flex gap-4 overflow-x-auto scroll-smooth no-scrollbar py-2 px-1 snap-x snap-mandatory"
-                  >
-                    {projects.map((project, idx) => (
-                      <div key={idx} className="w-[280px] sm:w-[325px] flex-shrink-0 snap-start flex flex-col">
-                        <BlurFade delay={0.6 + idx * 0.05} className="h-full flex flex-col">
-                          <div className="rounded-xl bg-card text-card-foreground flex flex-col overflow-hidden border border-border hover:shadow-lg transition-all duration-300 ease-out h-full group">
-                            <div className={`block overflow-hidden relative h-40 ${project.imageBg || 'bg-white'}`}>
-                              <img 
-                                alt={project.title} 
-                                loading="lazy" 
-                                className={`h-full w-full ${project.imageFit || 'object-contain object-center'} transition-transform duration-500 group-hover:scale-105`} 
-                                src={project.image}
-                              />
-                            </div>
-                            
-                            <div className="flex flex-col px-4 pt-3 pb-4 flex-1">
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between">
-                                  <h3 className="font-bold tracking-tight text-base text-foreground">{project.title}</h3>
-                                  <span className="font-sans text-[10px] text-muted-foreground font-semibold">{project.period}</span>
-                                </div>
-                                <p className="text-pretty font-sans text-xs text-muted-foreground mt-2 leading-relaxed">
-                                  {project.description}
-                                </p>
-                              </div>
-                              
-                              <div className="text-pretty font-sans text-xs text-muted-foreground mt-auto pt-4 flex flex-col">
-                                <div className="flex flex-wrap gap-1">
-                                  {project.tech.map((t, tIdx) => (
-                                    <span 
-                                      key={tIdx} 
-                                      className="inline-flex items-center rounded bg-secondary text-secondary-foreground px-1.5 py-0.5 text-[9px] font-semibold tracking-wide"
-                                    >
-                                      {t}
-                                    </span>
-                                  ))}
-                                </div>
-                                
-                                {/* Project Link Buttons */}
-                                <div className="flex flex-row flex-wrap items-center gap-1.5 mt-3 pt-2 border-t border-border/50">
-                                  {project.links.map((link, lIdx) => (
-                                    <a 
-                                      key={lIdx} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      href={link.url}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-md bg-primary text-primary-foreground shadow hover:bg-primary/90 transition-all duration-200"
-                                    >
-                                      {link.icon}
-                                      <span>{link.name}</span>
-                                    </a>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </BlurFade>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Education Section */}
-            <section id="education">
-              <div className="space-y-3">
-                <BlurFade delay={0.65}>
-                  <h2 className="text-xl font-bold">Education</h2>
-                </BlurFade>
-                
-                <div className="space-y-4">
-                  {education.map((edu, idx) => (
-                    <BlurFade key={idx} delay={0.7 + idx * 0.05}>
-                      <div className="flex flex-col space-y-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm">
-                          <h3 className="font-semibold text-foreground flex items-center gap-1.5">
-                            <GraduationCap className="size-3.5 text-muted-foreground" />
-                            {edu.institution}
-                          </h3>
-                          <span className="text-xs text-muted-foreground sm:text-right font-medium">{edu.period}</span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground">
-                          <span>{edu.degree} — <strong className="text-foreground">{edu.details}</strong></span>
-                          <span className="italic">{edu.location}</span>
-                        </div>
-                      </div>
-                    </BlurFade>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* Skills & Technologies Section */}
-            <section id="skills" className="scroll-mt-12">
-              <div className="flex min-h-0 flex-col gap-y-3">
-                <BlurFade delay={0.75}>
-                  <h2 className="text-xl font-bold">Skills &amp; Technologies</h2>
-                </BlurFade>
-                
-                <div className="space-y-3">
-                  {Object.entries(skillsData).map(([category, skills], idx) => (
-                    <BlurFade key={idx} delay={0.8 + idx * 0.05}>
-                      <div className="space-y-1.5">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{category}</div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {skills.map((skill, sIdx) => (
-                            <div 
-                              key={sIdx} 
-                              className="inline-flex items-center rounded-md border border-border px-2.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground shadow hover:bg-primary/90 transition-colors duration-200"
-                            >
-                              {skill}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </BlurFade>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* GitHub Contributions Heatmap Section */}
-            <section id="github-heatmap" className="scroll-mt-12">
-              <div className="flex min-h-0 flex-col gap-y-3">
-                <BlurFade delay={0.82}>
-                  <div className="flex items-baseline gap-2">
-                    <h2 className="text-xl font-normal font-serif italic text-muted-foreground/90">
-                      GitHub Contributions
-                    </h2>
-                    <span className="text-sm font-sans font-normal text-muted-foreground/70">
-                      • @samiralam321
-                    </span>
-                  </div>
-                </BlurFade>
-                
-                <BlurFade delay={0.85}>
-                  <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-sm overflow-hidden">
-                    <div 
-                      ref={calendarScrollRef}
-                      className="overflow-x-auto no-scrollbar w-full py-1"
-                      style={{ direction: 'rtl' }}
-                    >
-                      <div style={{ direction: 'ltr', display: 'inline-block', minWidth: 'max-content' }}>
-                        <GitHubCalendar
-                          username="samiralam321"
-                          colorScheme={darkMode ? 'dark' : 'light'}
-                          blockSize={12}
-                          blockMargin={4}
-                          fontSize={14}
-                          theme={{
-                            light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
-                            dark: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'],
-                          }}
+                <div className="bg-neutral-50/80 dark:bg-[#1D1D1D]/80 rounded-2xl border border-neutral-200/60 dark:border-[#292929] p-3.5 sm:p-4 transition-all duration-300 hover:shadow-xs group">
+                  <div className="flex items-center justify-between gap-3.5">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="shrink-0 size-12 sm:size-14 rounded-lg overflow-hidden shadow-sm relative group bg-neutral-200 dark:bg-neutral-800">
+                        <img 
+                          src={currentTrack.cover} 
+                          alt="Album Cover" 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <svg viewBox="0 0 24 24" className="size-3.5 text-[#1DB954]" fill="currentColor">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                          </svg>
+                          <span className="text-xs font-medium text-neutral-500 dark:text-[#A3A3A3]">
+                            {isPlayingAudio ? 'Now playing' : 'Last played'}
+                          </span>
+                        </div>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm hover:text-[#1DB954] transition-colors cursor-pointer block truncate">
+                          {currentTrack.title}
+                        </span>
+                        <p className="text-xs text-neutral-500 dark:text-[#A3A3A3] truncate">
+                          {currentTrack.artist}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button 
+                        onClick={() => switchTrack('prev')}
+                        aria-label="Previous Track"
+                        className="size-8 rounded-full border border-neutral-200 dark:border-[#292929] hover:border-neutral-300 dark:hover:border-neutral-700 bg-white dark:bg-[#252525] text-neutral-600 dark:text-[#A3A3A3] hover:text-black dark:hover:text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                      >
+                        <SkipBack className="size-3.5 fill-current" />
+                      </button>
+                      <button 
+                        onClick={togglePlayAudio}
+                        aria-label={isPlayingAudio ? 'Pause' : 'Play'}
+                        className="size-9 rounded-full border border-neutral-200 dark:border-[#292929] hover:border-neutral-300 dark:hover:border-neutral-700 bg-white dark:bg-[#252525] text-neutral-800 dark:text-neutral-200 hover:scale-105 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center justify-center"
+                      >
+                        {isPlayingAudio ? <Pause className="size-4 fill-current" /> : <Play className="size-4 fill-current ml-0.5" />}
+                      </button>
+                      <button 
+                        onClick={() => switchTrack('next')}
+                        aria-label="Next Track"
+                        className="size-8 rounded-full border border-neutral-200 dark:border-[#292929] hover:border-neutral-300 dark:hover:border-neutral-700 bg-white dark:bg-[#252525] text-neutral-600 dark:text-[#A3A3A3] hover:text-black dark:hover:text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                      >
+                        <SkipForward className="size-3.5 fill-current" />
+                      </button>
                     </div>
                   </div>
-                </BlurFade>
-              </div>
-            </section>
+                </div>
+              </section>
 
+              {/* Dashed divider */}
+              <div className="border-b border-dashed border-neutral-200/80 dark:border-[#292929] my-8 sm:my-10 mx-4 sm:mx-8"></div>
 
+              {/* Coding Profiles Section */}
+              <section id="profiles" className="sm:px-8 px-4">
+                <h2 className="text-xl sm:text-2xl font-normal font-instrument mb-3 text-neutral-900 dark:text-[#F2F2F2]">
+                  Coding Profiles
+                </h2>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <a 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-2 rounded-lg border border-neutral-200/80 dark:border-[#292929] px-3 py-1.5 hover:bg-neutral-50 dark:hover:bg-[#1D1D1D] text-xs font-medium text-neutral-800 dark:text-[#F2F2F2] transition-colors" 
+                    href="https://leetcode.com/u/samCPer/"
+                    title="LeetCode"
+                  >
+                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" role="img" viewBox="0 0 24 24" className="h-4 w-4 text-[#FFA116]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"></path>
+                    </svg>
+                    <span>LeetCode</span>
+                  </a>
+                  <a 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-2 rounded-lg border border-neutral-200/80 dark:border-[#292929] px-3 py-1.5 hover:bg-neutral-50 dark:hover:bg-[#1D1D1D] text-xs font-medium text-neutral-800 dark:text-[#F2F2F2] transition-colors" 
+                    href="https://codeforces.com/profile/SamCodez"
+                    title="Codeforces"
+                  >
+                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" role="img" viewBox="0 0 24 24" className="h-4 w-4 text-[#318DFF]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4.5 7.5C5.328 7.5 6 8.172 6 9v10.5c0 .828-.672 1.5-1.5 1.5h-3C.673 21 0 20.328 0 19.5V9c0-.828.673-1.5 1.5-1.5h-3zm9-4.5c.828 0 1.5.672 1.5 1.5v15c0 .828-.672 1.5-1.5 1.5h-3c-.827 0-1.5-.672-1.5-1.5v-15c0-.828.673-1.5 1.5-1.5h3zm9 7.5c.828 0 1.5.672 1.5 1.5v7.5c0 .828-.672 1.5-1.5 1.5h-3c-.828 0-1.5-.672-1.5-1.5V12c0-.828.672-1.5 1.5-1.5h3z"></path>
+                    </svg>
+                    <span>Codeforces</span>
+                  </a>
+                  <a 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-2 rounded-lg border border-neutral-200/80 dark:border-[#292929] px-3 py-1.5 hover:bg-neutral-50 dark:hover:bg-[#1D1D1D] text-xs font-medium text-neutral-800 dark:text-[#F2F2F2] transition-colors" 
+                    href="https://www.codechef.com/users/samir_codez"
+                    title="CodeChef"
+                  >
+                    <svg stroke="currentColor" fill="currentColor" strokeWidth="0" role="img" viewBox="0 0 24 24" className="h-4 w-4 text-[#5B4638]" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M11.2574.0039c-.37.0101-.7353.041-1.1003.095C9.6164.153 9.0766.4236 8.482.694c-.757.3244-1.5147.6486-2.2176.7027-1.1896.3785-1.568.919-1.8925 1.3516 0 .054-.054.1079-.054.1079-.4325.865-.4873 1.73-.325 2.5952.1621.5407.3786 1.0282.5408 1.5148.3785 1.0274.7578 2.0007.92 3.1362.1622.3244.3235.7571.4316 1.1897.2704.8651.542 1.8383 1.353 2.5952l.0057-.0028c.0175.0183.0301.0387.0482.0568.0072-.0036.0141-.0063.0213-.0099l-.0213-.5849c.6489-.9733 1.5673-1.6221 2.865-1.8925.5195-.1093 1.081-.1497 1.6625-.1278a8.7733 8.7733 0 0 1 1.7988.2357c1.4599.3785 2.595 1.1358 2.6492 1.7846.0273.3549.0398.6952.0326 1.0364-.001.064-.0046.1285-.007.193l.1362.0682c.075-.0375.1424-.107.2059-.1902.0008-.001.002-.002.0028-.0028.0018-.0023.0039-.0061.0057-.0085.0396-.0536.0747-.1236.1107-.1931.0188-.0377.0372-.0866.0554-.1292.2048-.4622.362-1.1536.538-1.9635.0541-.2703.1092-.4864.1633-.7027.4326-.9733 1.0266-1.8382 1.6213-2.6492.9733-1.3518 1.8928-2.5962 1.7846-4.0561-1.784-3.4608-4.2718-4.0017-5.5695-4.272-.2163-.0541-.3233-.0539-.4856-.108-1.3382-.2433-2.4945-.3953-3.6046-.3648z"></path>
+                    </svg>
+                    <span>CodeChef</span>
+                  </a>
+                </div>
+              </section>
 
-            {/* Contact Section */}
-            <section id="contact">
-              <div className="grid items-center justify-center gap-4 px-4 text-center md:px-6 w-full py-12">
-                <BlurFade delay={0.85}>
-                  <div className="space-y-3">
-                    <div className="inline-block rounded-lg bg-foreground text-background px-3 py-1 text-xs font-medium">Contact</div>
-                    <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Get in Touch</h2>
-                    <p className="mx-auto max-w-[600px] text-muted-foreground text-sm md:text-base leading-relaxed">
-                      Have a question or an opportunity to discuss? Just shoot me an email at{' '}
-                      <a className="text-blue-500 hover:underline font-semibold" href="mailto:sa8103339@gmail.com">
-                        sa8103339@gmail.com
-                      </a>{' '}
-                      and I'll respond whenever I can.
-                    </p>
+              {/* Dashed divider */}
+              <div className="border-b border-dashed border-neutral-200/80 dark:border-[#292929] my-8 sm:my-10 mx-4 sm:mx-8"></div>
+
+              {/* Professional Experience Section */}
+              <section id="experience" className="sm:px-8 px-4">
+                <h2 className="text-xl sm:text-2xl font-normal font-instrument mb-4 text-neutral-900 dark:text-[#F2F2F2]">
+                  Professional Experience
+                </h2>
+                <div className="space-y-4">
+                  {experiences.map((exp, idx) => (
+                    <div key={idx} className="flex flex-col space-y-1.5 rounded-xl p-3.5 sm:p-4 border border-neutral-200/60 dark:border-[#292929] bg-neutral-50/50 dark:bg-[#1D1D1D]/50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm">
+                        <h3 className="font-semibold text-neutral-900 dark:text-[#F2F2F2] flex items-center gap-1.5">
+                          <Briefcase className="size-3.5 text-neutral-500" />
+                          {exp.role} <span className="text-xs text-neutral-500 dark:text-[#A3A3A3] font-normal">({exp.company})</span>
+                        </h3>
+                        <span className="text-xs text-neutral-500 dark:text-[#A3A3A3] sm:text-right font-medium">{exp.period}</span>
+                      </div>
+                      <div className="text-xs text-neutral-500 dark:text-[#A3A3A3] font-medium pb-1">{exp.type}</div>
+                      <ul className="list-disc list-inside text-xs text-neutral-600 dark:text-[#A3A3A3] space-y-1 pl-1 leading-relaxed">
+                        {exp.bullets.map((bullet, bIdx) => (
+                          <li key={bIdx}>{bullet}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Dashed divider */}
+              <div className="border-b border-dashed border-neutral-200/80 dark:border-[#292929] my-8 sm:my-10 mx-4 sm:mx-8"></div>
+
+              {/* Featured Projects Section */}
+              <section id="projects" className="sm:px-8 px-4 scroll-mt-12">
+                <h2 className="text-xl sm:text-2xl font-normal font-instrument mb-4 text-neutral-900 dark:text-[#F2F2F2]">
+                  Featured Projects
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {projects.map((project, idx) => (
+                    <div key={idx} className="rounded-xl border border-neutral-200/70 dark:border-[#292929] bg-neutral-50/50 dark:bg-[#1D1D1D]/50 overflow-hidden flex flex-col hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-200 group">
+                      <div className={`relative h-40 overflow-hidden ${project.imageBg || 'bg-neutral-100 dark:bg-neutral-800'}`}>
+                        <img 
+                          src={project.image} 
+                          alt={project.title} 
+                          className={`w-full h-full ${project.imageFit || 'object-cover'} transition-transform duration-500 group-hover:scale-105`} 
+                        />
+                      </div>
+                      <div className="p-3.5 sm:p-4 flex flex-col flex-1">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <h3 className="font-semibold text-sm sm:text-base text-neutral-900 dark:text-[#F2F2F2]">{project.title}</h3>
+                          <span className="text-[10px] text-neutral-500 dark:text-[#A3A3A3] font-medium">{project.period}</span>
+                        </div>
+                        <p className="text-xs text-neutral-600 dark:text-[#A3A3A3] leading-relaxed mb-3 flex-1">
+                          {project.description}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {project.tech.slice(0, 6).map((t, tIdx) => (
+                            <span key={tIdx} className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-neutral-800 text-neutral-700 dark:text-[#A3A3A3] font-medium">
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2 pt-2 border-t border-neutral-200/60 dark:border-[#292929]/80">
+                          {project.links.map((link, lIdx) => (
+                            <a 
+                              key={lIdx} 
+                              href={link.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-md border border-neutral-200 dark:border-[#292929] bg-white dark:bg-[#222222] text-neutral-700 dark:text-[#F2F2F2] hover:bg-neutral-50 dark:hover:bg-[#2a2a2a] transition-colors shadow-2xs"
+                            >
+                              {link.icon}
+                              <span>{link.name}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Dashed divider */}
+              <div className="border-b border-dashed border-neutral-200/80 dark:border-[#292929] my-8 sm:my-10 mx-4 sm:mx-8"></div>
+
+              {/* Education Section */}
+              <section id="education" className="sm:px-8 px-4">
+                <h2 className="text-xl sm:text-2xl font-normal font-instrument mb-4 text-neutral-900 dark:text-[#F2F2F2]">
+                  Education
+                </h2>
+                <div className="space-y-3">
+                  {education.map((edu, idx) => (
+                    <div key={idx} className="rounded-xl p-3.5 sm:p-4 border border-neutral-200/60 dark:border-[#292929] bg-neutral-50/50 dark:bg-[#1D1D1D]/50">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm">
+                        <h3 className="font-semibold text-neutral-900 dark:text-[#F2F2F2] flex items-center gap-1.5">
+                          <GraduationCap className="size-3.5 text-neutral-500" />
+                          {edu.institution}
+                        </h3>
+                        <span className="text-xs text-neutral-500 dark:text-[#A3A3A3] font-medium">{edu.period}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-neutral-600 dark:text-[#A3A3A3] mt-1">
+                        <span>{edu.degree} — <strong className="text-neutral-900 dark:text-[#F2F2F2]">{edu.details}</strong></span>
+                        <span className="italic">{edu.location}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Dashed divider */}
+              <div className="border-b border-dashed border-neutral-200/80 dark:border-[#292929] my-8 sm:my-10 mx-4 sm:mx-8"></div>
+
+              {/* Skills & Technologies Section */}
+              <section id="skills" className="sm:px-8 px-4 scroll-mt-12">
+                <h2 className="text-xl sm:text-2xl font-normal font-instrument mb-4 text-neutral-900 dark:text-[#F2F2F2]">
+                  Skills &amp; Technologies
+                </h2>
+                <div className="space-y-3">
+                  {Object.entries(skillsData).map(([category, skills], idx) => (
+                    <div key={idx} className="space-y-1.5">
+                      <div className="text-xs font-medium text-neutral-500 dark:text-[#A3A3A3] uppercase tracking-wider">{category}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {skills.map((skill, sIdx) => (
+                          <span 
+                            key={sIdx} 
+                            className="inline-flex items-center rounded-md border border-neutral-200/80 dark:border-[#292929] px-2.5 py-0.5 text-xs font-medium bg-neutral-50 dark:bg-[#1D1D1D] text-neutral-800 dark:text-[#F2F2F2]"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Dashed divider */}
+              <div className="border-b border-dashed border-neutral-200/80 dark:border-[#292929] my-8 sm:my-10 mx-4 sm:mx-8"></div>
+
+              {/* GitHub Contributions Section */}
+              <section id="github-heatmap" className="sm:px-8 px-4 scroll-mt-12">
+                <div className="flex items-baseline gap-2 mb-4">
+                  <h2 className="text-xl sm:text-2xl font-normal font-instrument text-neutral-900 dark:text-[#F2F2F2]">
+                    GitHub Contributions
+                  </h2>
+                  <span className="text-neutral-400 dark:text-[#737373] text-sm">•</span>
+                  <span className="text-lg sm:text-xl font-normal font-instrument not-italic text-neutral-500 dark:text-[#A3A3A3] select-none">
+                    @samiralam321
+                  </span>
+                </div>
+
+                <div className="rounded-xl border border-neutral-200/70 dark:border-[#292929] bg-neutral-50/50 dark:bg-[#1D1D1D]/50 p-4 sm:p-5 overflow-hidden">
+                  <div className="w-full flex justify-center">
+                    <GitHubCalendar
+                      username="samiralam321"
+                      colorScheme={darkMode ? 'dark' : 'light'}
+                      blockSize={11}
+                      blockMargin={3}
+                      fontSize={12}
+                      labels={{
+                        totalCount: '{{count}} contributions in the last year'
+                      }}
+                      theme={{
+                        light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+                        dark: ['#1c1c1c', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                      }}
+                    />
                   </div>
-                </BlurFade>
-              </div>
-            </section>
-          </motion.div>
-        ) : view === 'articles' ? (
-          <ArticlesView onBack={() => handleNav('home')} />
-        ) : (
-          <motion.div
-            key="contact-page"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="flex-1 flex items-center justify-center py-2 pb-10"
-          >
-            <div className="bg-card text-card-foreground rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-border/80 p-5 md:p-8 w-full transition-all">
-              <h2 className="text-2xl md:text-3xl font-bold text-center mb-4 md:mb-6">Get in Touch</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-                {/* Left Side Links */}
-                <div className="flex flex-col space-y-2 justify-center pl-1">
+                </div>
+              </section>
+
+              {/* Dashed divider */}
+              <div className="border-b border-dashed border-neutral-200/80 dark:border-[#292929] my-8 sm:my-10 mx-4 sm:mx-8"></div>
+
+              {/* Contact / Get in Touch Section */}
+              <section id="contact" className="sm:px-8 px-4">
+                <h2 className="text-xl sm:text-2xl font-normal font-instrument mb-3 text-neutral-900 dark:text-[#F2F2F2]">
+                  Get in Touch
+                </h2>
+                <p className="text-sm text-neutral-600 dark:text-[#A3A3A3] leading-relaxed max-w-lg mb-4">
+                  Have a question, collaboration idea, or opportunity? Feel free to reach out.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
                   {contactLinks.map((link) => (
-                    <motion.a
+                    <a
                       key={link.name}
                       href={link.url}
                       target={link.name !== "Email" ? "_blank" : undefined}
                       rel={link.name !== "Email" ? "noopener noreferrer" : undefined}
-                      whileHover={{ x: 4, scale: 1.01 }}
-                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                      className="flex items-center gap-2.5 text-muted-foreground hover:text-foreground text-sm md:text-base font-medium transition-colors py-0.5 cursor-pointer group w-max"
+                      className="inline-flex items-center gap-2 rounded-lg border border-neutral-200/80 dark:border-[#292929] px-3 py-1.5 bg-neutral-50 dark:bg-[#1D1D1D] text-xs font-medium text-neutral-800 dark:text-[#F2F2F2] hover:bg-neutral-100 dark:hover:bg-[#252525] transition-colors"
                     >
                       {link.icon}
                       <span>{link.name}</span>
-                    </motion.a>
+                    </a>
                   ))}
                 </div>
-                
-                {/* Right Side Form */}
-                <form onSubmit={handleSubmit} className="flex flex-col space-y-3">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Your Name"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-xs"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="email"
-                      placeholder="Your Email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-xs"
-                    />
-                  </div>
-                  <div>
-                    <textarea
-                      placeholder="Your Message"
-                      required
-                      rows={3}
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none transition-all text-xs"
-                    />
+              </section>
+
+            </div>
+          </motion.div>
+        ) : view === 'articles' ? (
+          <motion.div
+            key="articles"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="relative mx-auto max-w-4xl min-h-screen m-0 p-0"
+          >
+            {/* Left and right stripes */}
+            <div className="absolute left-0 w-[60px] h-full overflow-hidden sm:block hidden pointer-events-none" style={{ top: 0 }}>
+              <div className="absolute inset-0 w-[60px] h-full border-r border-neutral-200/80 dark:border-[#292929] diagonal-stripes text-black dark:text-[#eee] opacity-[0.07] dark:opacity-[0.06]"></div>
+            </div>
+            <div className="absolute right-0 w-[60px] h-full overflow-hidden sm:block hidden pointer-events-none" style={{ top: 0 }}>
+              <div className="absolute inset-0 w-[60px] h-full border-l border-neutral-200/80 dark:border-[#292929] diagonal-stripes text-black dark:text-[#eee] opacity-[0.07] dark:opacity-[0.06]"></div>
+            </div>
+            <div className="mx-auto sm:w-[calc(100%-120px)] w-full min-h-screen bg-white dark:bg-[#171717] border-x border-neutral-200/80 dark:border-[#292929] shadow-xs px-4 sm:px-8 py-8 pb-16 m-0">
+              <ArticlesView onBack={() => handleNav('home')} />
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="contact-page"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="relative mx-auto max-w-4xl min-h-screen m-0 p-0"
+          >
+            {/* Left and right stripes */}
+            <div className="absolute left-0 w-[60px] h-full overflow-hidden sm:block hidden pointer-events-none" style={{ top: 0 }}>
+              <div className="absolute inset-0 w-[60px] h-full border-r border-neutral-200/80 dark:border-[#292929] diagonal-stripes text-black dark:text-[#eee] opacity-[0.07] dark:opacity-[0.06]"></div>
+            </div>
+            <div className="absolute right-0 w-[60px] h-full overflow-hidden sm:block hidden pointer-events-none" style={{ top: 0 }}>
+              <div className="absolute inset-0 w-[60px] h-full border-l border-neutral-200/80 dark:border-[#292929] diagonal-stripes text-black dark:text-[#eee] opacity-[0.07] dark:opacity-[0.06]"></div>
+            </div>
+            <div className="mx-auto sm:w-[calc(100%-120px)] w-full min-h-screen bg-white dark:bg-[#171717] border-x border-neutral-200/80 dark:border-[#292929] shadow-xs px-4 sm:px-8 py-8 pb-16 m-0">
+              <button 
+                onClick={() => handleNav('home')}
+                className="mb-6 inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="size-4" />
+                <span>Back to profile</span>
+              </button>
+              <div className="max-w-xl mx-auto py-4">
+                <h2 className="text-3xl font-normal font-instrument mb-4 text-neutral-900 dark:text-[#F2F2F2]">Get in Touch</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
+                  {/* Left Side Links */}
+                  <div className="flex flex-col space-y-2 justify-center pl-1">
+                    {contactLinks.map((link) => (
+                      <a
+                        key={link.name}
+                        href={link.url}
+                        target={link.name !== "Email" ? "_blank" : undefined}
+                        rel={link.name !== "Email" ? "noopener noreferrer" : undefined}
+                        className="flex items-center gap-2.5 text-neutral-600 dark:text-[#A3A3A3] hover:text-neutral-900 dark:hover:text-white text-sm font-medium transition-colors py-1 cursor-pointer group w-max"
+                      >
+                        {link.icon}
+                        <span>{link.name}</span>
+                      </a>
+                    ))}
                   </div>
                   
-                  <button
-                    type="submit"
-                    disabled={formStatus === 'sending'}
-                    className="px-6 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg shadow hover:bg-primary/90 active:scale-[0.98] transition-all w-max text-sm disabled:opacity-50 cursor-pointer"
-                  >
-                    {formStatus === 'sending' 
-                      ? 'Sending...' 
-                      : formStatus === 'success' 
-                      ? 'Message Sent!' 
-                      : formStatus === 'error' 
-                      ? 'Error Sending!' 
-                      : 'Send Message'}
-                  </button>
-                </form>
+                  {/* Right Side Form */}
+                  <form onSubmit={handleSubmit} className="flex flex-col space-y-3">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Your Name"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-900 dark:text-[#F2F2F2] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-600 transition-all text-xs"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Your Email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-900 dark:text-[#F2F2F2] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-600 transition-all text-xs"
+                      />
+                    </div>
+                    <div>
+                      <textarea
+                        placeholder="Your Message"
+                        required
+                        rows={3}
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-[#292929] bg-white dark:bg-[#1D1D1D] text-neutral-900 dark:text-[#F2F2F2] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-600 resize-none transition-all text-xs"
+                      />
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      disabled={formStatus === 'sending'}
+                      className="px-5 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium rounded-lg shadow-sm hover:opacity-90 active:scale-[0.98] transition-all w-max text-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      {formStatus === 'sending' 
+                        ? 'Sending...' 
+                        : formStatus === 'success' 
+                        ? 'Message Sent!' 
+                        : formStatus === 'error' 
+                        ? 'Error Sending!' 
+                        : 'Send Message'}
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Floating Bottom Navigation Dock */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto mb-4 flex origin-bottom h-full max-h-14">
-        {/* Backdrop Fade */}
-        <div className="fixed bottom-0 inset-x-0 h-20 w-full bg-background to-transparent backdrop-blur-lg [-webkit-mask-image:linear-gradient(to_top,black,transparent)] pointer-events-none z-10"></div>
-        
-        {/* Dock Wrapper Container */}
-        <Dock>
-          <DockIcon onClick={() => handleNav('home')} title="Home">
-            <Home className="size-[19px]" />
-          </DockIcon>
-          
-          <DockIcon onClick={() => handleNav('home', 'projects')} title="Projects">
-            <Folder className="size-[19px]" />
-          </DockIcon>
-          
-          {/* Divider */}
-          <div role="none" className="shrink-0 bg-border w-[1px] h-6 mx-[3px]"></div>
-          
-          {/* External Social Links */}
-          <DockIcon href="https://github.com/samiralam321" target="_blank" rel="noopener noreferrer" title="GitHub">
-            <Github className="size-[19px]" />
-          </DockIcon>
-
-          <DockIcon href="https://www.linkedin.com/in/samir-alam-595b74328/" target="_blank" rel="noopener noreferrer" title="LinkedIn">
-            <Linkedin className="size-[19px]" />
-          </DockIcon>
-          
-          <DockIcon href="https://x.com/SamAlCse" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
-            <Twitter className="size-[19px]" />
-          </DockIcon>
-
-          {/* Medium Articles Icon – after Twitter/X, before Mail */}
-          <DockIcon onClick={() => handleNav('articles')} title="Medium Articles">
-            <BookOpen className="size-[19px]" />
-          </DockIcon>
-          
-          <DockIcon onClick={() => handleNav('contact')} title="Contact">
-            <Mail className="size-[19px]" />
-          </DockIcon>
-
-          {/* Divider */}
-          <div role="none" className="shrink-0 bg-border w-[1px] h-6 mx-[3px]"></div>
-          
-          {/* Theme Toggle */}
-          <DockIcon onClick={toggleDarkMode} title="Toggle Theme">
-            {darkMode ? <Sun className="size-[19px] text-yellow-500" /> : <Moon className="size-[19px] text-neutral-800" />}
-          </DockIcon>
-        </Dock>
-      </div>
     </main>
   )
 }

@@ -25,55 +25,91 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #09090b;
+  --background: #fafafa;
+  --foreground: #171717;
   --card: #ffffff;
-  --card-foreground: #09090b;
+  --card-foreground: #171717;
   --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
+  --popover-foreground: #171717;
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
   --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #18181b;
+  --destructive-foreground: #ffffff;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #171717;
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: #030303;
-  --foreground: #fafafa;
-  --card: #030303;
-  --card-foreground: #fafafa;
-  --popover: #030303;
-  --popover-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
-  --secondary: #161618;
-  --secondary-foreground: #fafafa;
-  --muted: #161618;
-  --muted-foreground: #a1a1aa;
-  --accent: #161618;
-  --accent-foreground: #fafafa;
+  --background: #121212;
+  --foreground: #F2F2F2;
+  --card: #171717;
+  --card-foreground: #F2F2F2;
+  --popover: #171717;
+  --popover-foreground: #F2F2F2;
+  --primary: #F2F2F2;
+  --primary-foreground: #171717;
+  --secondary: #1D1D1D;
+  --secondary-foreground: #F2F2F2;
+  --muted: #1D1D1D;
+  --muted-foreground: #A3A3A3;
+  --accent: #1D1D1D;
+  --accent-foreground: #F2F2F2;
   --destructive: #7f1d1d;
-  --destructive-foreground: #fafafa;
-  --border: #222224;
-  --input: #222224;
-  --ring: #d4d4d8;
+  --destructive-foreground: #F2F2F2;
+  --border: #292929;
+  --input: #292929;
+  --ring: #F2F2F2;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+#root {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   scroll-behavior: smooth;
+}
+
+.font-instrument {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+/* Diagonal stripe background pattern matching reference */
+.diagonal-stripes {
+  background-image: repeating-linear-gradient(-45deg, transparent, transparent 2px, currentColor 2px, currentColor 3px, transparent 3px, transparent 6px);
+}
+
+/* Document View Transitions for Theme Toggle */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 99999;
 }
 
 /* Custom styles for layout transitions */
@@ -90,5 +126,39 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Responsive GitHub Activity Calendar - Fixed, Not Scrollable */
+.react-activity-calendar {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.react-activity-calendar svg.react-activity-calendar__calendar {
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  display: block !important;
+}
+
+.react-activity-calendar__footer {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-top: 10px !important;
+  color: inherit !important;
+  font-family: inherit !important;
+}
+
+.react-activity-calendar__count {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.react-activity-calendar__legend-colors {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
 }
 
