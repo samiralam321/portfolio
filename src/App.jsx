@@ -1086,9 +1086,9 @@ function App() {
               <div className="w-full relative m-0 p-0">
                 <div className="relative w-full h-[180px] sm:h-[280px] overflow-hidden bg-neutral-900">
                   <img 
-                    src="/images/blue-ridge-main.webp" 
-                    alt="Blue Ridge Mountains" 
-                    className="w-full h-full object-cover select-none"
+                    src="/images/portfolio-landscape.webp" 
+                    alt="Mountain River Landscape" 
+                    className="w-full h-full object-cover select-none object-center"
                   />
                   <div className="absolute inset-0 flex items-center justify-center px-4 bg-black/25 pointer-events-none">
                     <p className="text-white text-base sm:text-xl italic font-instrument text-center select-none tracking-wide drop-shadow-md">
