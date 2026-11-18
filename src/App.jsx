@@ -722,6 +722,7 @@ function App() {
     }
   }
 
+  const [coverImageLoaded, setCoverImageLoaded] = useState(false)
   const projectsContainerRef = React.useRef(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
@@ -1083,15 +1084,21 @@ function App() {
             <div className="mx-auto sm:w-[calc(100%-120px)] w-full min-h-screen bg-white dark:bg-[#171717] border-x border-neutral-200/80 dark:border-[#292929] shadow-xs pb-16 m-0 p-0">
               
               {/* Cover Banner Section */}
-              <div className="w-full relative m-0 p-0">
-                <div className="relative w-full h-[180px] sm:h-[280px] overflow-hidden bg-neutral-900">
+              <div className="w-full relative m-0 p-0 select-none pointer-events-none no-drag">
+                <div className="relative w-full h-[180px] sm:h-[280px] overflow-hidden bg-neutral-100 dark:bg-[#1A1A1A] select-none pointer-events-none no-drag">
                   <img 
                     src="/images/portfolio-landscape.webp" 
                     alt="Mountain River Landscape" 
-                    className="w-full h-full object-cover select-none object-center"
+                    draggable="false"
+                    onLoad={() => setCoverImageLoaded(true)}
+                    className={`w-full h-full object-cover object-center select-none pointer-events-none no-drag transition-opacity duration-700 ease-out ${
+                      coverImageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center px-4 bg-black/25 pointer-events-none">
-                    <p className="text-white text-base sm:text-xl italic font-instrument text-center select-none tracking-wide drop-shadow-md">
+                  <div className={`absolute inset-0 flex items-center justify-center px-4 bg-black/25 pointer-events-none select-none no-drag transition-opacity duration-700 ${
+                    coverImageLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}>
+                    <p className="text-white text-base sm:text-xl italic font-instrument text-center select-none tracking-wide drop-shadow-md pointer-events-none">
                       Build what you wish existed.
                     </p>
                   </div>

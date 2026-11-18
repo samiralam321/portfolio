@@ -97,6 +97,18 @@ body {
   background-image: repeating-linear-gradient(-45deg, transparent, transparent 2px, currentColor 2px, currentColor 3px, transparent 3px, transparent 6px);
 }
 
+/* Non-draggable, non-selectable utilities */
+.no-drag {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
 /* Document View Transitions for Theme Toggle */
 ::view-transition-old(root),
 ::view-transition-new(root) {
