@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { flushSync } from 'react-dom'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { TypeAnimation } from 'react-type-animation'
-import { GitHubCalendar } from 'react-github-calendar'
+import { ActivityCalendar } from 'react-activity-calendar'
+import fallbackGitHubData from './data/githubContributions.json'
 import {
   Home,
   Folder,
@@ -89,6 +90,61 @@ const Tooltip = ({ children, content }) => {
         <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] border-4 border-transparent border-t-[#111111] dark:border-t-[#222222]" />
       </div>
     </div>
+  )
+}
+
+// Resilient GitHub Calendar with local snapshot fallback to prevent external API outage errors
+const RobustGitHubCalendar = ({ darkMode }) => {
+  const [calendarData, setCalendarData] = useState(fallbackGitHubData.contributions || [])
+  const [totalCount, setTotalCount] = useState(fallbackGitHubData.total?.lastYear || 845)
+
+  useEffect(() => {
+    let isMounted = true
+    const controller = new AbortController()
+
+    fetch('https://github-contributions-api.jogruber.de/v4/samiralam321?y=last&client=react-github-calendar', {
+      signal: controller.signal
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
+      .then(data => {
+        if (isMounted && data?.contributions && Array.isArray(data.contributions) && data.contributions.length > 0) {
+          setCalendarData(data.contributions)
+          if (data.total?.lastYear) {
+            setTotalCount(data.total.lastYear)
+          }
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          console.warn('GitHub contributions live fetch failed; seamlessly using cached snapshot.', err.message)
+        }
+      })
+
+    return () => {
+      isMounted = false
+      controller.abort()
+    }
+  }, [])
+
+  return (
+    <ActivityCalendar
+      data={calendarData}
+      colorScheme={darkMode ? 'dark' : 'light'}
+      blockSize={11}
+      blockMargin={3}
+      fontSize={12}
+      maxLevel={4}
+      labels={{
+        totalCount: `${totalCount} contributions in the last year`
+      }}
+      theme={{
+        light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
+        dark: ['#1c1c1c', '#0e4429', '#006d32', '#26a641', '#39d353'],
+      }}
+    />
   )
 }
 
@@ -1494,20 +1550,7 @@ function App() {
 
                 <div className="rounded-xl border border-neutral-200/70 dark:border-[#292929] bg-neutral-50/50 dark:bg-[#1D1D1D]/50 p-4 sm:p-5 overflow-hidden">
                   <div className="w-full flex justify-center">
-                    <GitHubCalendar
-                      username="samiralam321"
-                      colorScheme={darkMode ? 'dark' : 'light'}
-                      blockSize={11}
-                      blockMargin={3}
-                      fontSize={12}
-                      labels={{
-                        totalCount: '{{count}} contributions in the last year'
-                      }}
-                      theme={{
-                        light: ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'],
-                        dark: ['#1c1c1c', '#0e4429', '#006d32', '#26a641', '#39d353'],
-                      }}
-                    />
+                    <RobustGitHubCalendar darkMode={darkMode} />
                   </div>
                 </div>
               </section>
